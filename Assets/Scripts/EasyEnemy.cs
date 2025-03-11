@@ -8,10 +8,4 @@ public class EasyEnemy : EnemyBase
         Debug.Log("Easy Enemy Spawned");
         Speed = 2.0f; // Example: Easy enemies are a bit slower
     }
-
-    public override void TakeDamage(int damageAmount)
-    {
-        Debug.Log("Easy Enemy took damage! Damage - " + damageAmount);
-        base.TakeDamage(damageAmount);
-    }
 }

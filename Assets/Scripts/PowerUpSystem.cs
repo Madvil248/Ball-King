@@ -22,6 +22,16 @@ public class PowerUpSystem : MonoBehaviour
     [SerializeField] private float _powerJumpDuration = 30f;
     private bool _isPowerJumpPowerUpActive = false;
 
+    [Header("Invisibility Powerup")]
+    [SerializeField] private float _invisibilityDuration = 20f;
+    private bool _hasInvisibilityPowerUp = false;
+
+    [Header("Visual Effects")]
+    [SerializeField] private Renderer _playerRenderer;
+    private Color _originalColor;
+    private int _originalLayer;
+    [SerializeField] private string _invisibilityLayerName = "InvisiblePlayer";
+
     public bool HasPowerUp
     {
         get { return _hasPowerUp; }
@@ -38,6 +48,12 @@ public class PowerUpSystem : MonoBehaviour
     {
         get { return _isPowerJumpPowerUpActive; }
         private set { _isPowerJumpPowerUpActive = value; }
+    }
+
+    public bool HasInvisibilityPowerUp
+    {
+        get { return _hasInvisibilityPowerUp; }
+        private set { _hasInvisibilityPowerUp = value; }
     }
 
     public GameObject PowerUpIndicator
@@ -73,6 +89,16 @@ public class PowerUpSystem : MonoBehaviour
         {
             Debug.LogError("PlayerMovement component not found on PowerUpSystem! Ensure PowerUpSystem and PlayerMovement are on the same GameObject.");
         }
+
+        if (_playerRenderer != null)
+        {
+            _originalColor = _playerRenderer.material.color;
+            _originalLayer = gameObject.layer;
+        }
+        else
+        {
+            Debug.LogError("Player Renderer is not assigned in PowerUpSystem!");
+        }
     }
 
     // For Speed Boost PowerUp collect
@@ -80,7 +106,6 @@ public class PowerUpSystem : MonoBehaviour
     {
         HasPowerUp = true;
         Debug.Log("Speed Boost PowerUp Collected! Press Fire button to activate.");
-        Debug.Log("HasPowerUp set to: " + HasPowerUp);
         if (_powerUpIndicator != null)
         {
             PowerUpIndicator.gameObject.SetActive(true);
@@ -95,13 +120,18 @@ public class PowerUpSystem : MonoBehaviour
     {
         HasRocketPowerUp = true;
         Debug.Log("Rocket PowerUp Collected! Press Fire button to launch rocket.");
-        Debug.Log("HasRocketPowerUp set to: " + HasRocketPowerUp);
     }
 
     public void CollectPowerJumpPowerUp()
     {
         HasPowerJumpPowerUp = true;
         Debug.Log("Power Jump PowerUp Collected! Press F key to activate Jump.");
+    }
+
+    public void CollectInvisibilityPowerUp()
+    {
+        HasInvisibilityPowerUp = true;
+        Debug.Log("Invisibility PowerUp Collected! Press F key to activate Invisibility.");
     }
 
     private IEnumerator PowerUpCountdownRoutine()
@@ -130,6 +160,38 @@ public class PowerUpSystem : MonoBehaviour
         _isPowerJumpPowerUpActive = false;
         _playerMovement.IsPowerJumpActive = false;
         Debug.Log("Power Jump PowerUp Expired.");
+    }
+
+    private IEnumerator InvisibilityPowerUpCountdownRoutine()
+    {
+        Debug.Log("Invisibility Activated!");
+        if (_playerRenderer != null)
+        {
+            Color transparentColor = _originalColor;
+            transparentColor.a = 0.6f;
+            _playerRenderer.material.color = transparentColor;
+
+            int invisibilityLayer = LayerMask.NameToLayer(_invisibilityLayerName);
+            if (invisibilityLayer != -1)
+            {
+                gameObject.layer = invisibilityLayer;
+            }
+            else
+            {
+                Debug.LogError($"Layer '{_invisibilityLayerName}' not found! Make sure it exists in Layer settings.");
+            }
+        }
+        yield return new WaitForSeconds(_invisibilityDuration);
+        Debug.Log("Invisibility PowerUp Expired!");
+        if (_playerRenderer != null)
+        {
+            // Revert to Original Color
+            _playerRenderer.material.color = _originalColor;
+
+            // Revert to Original Layer
+            gameObject.layer = _originalLayer;
+        }
+        _hasInvisibilityPowerUp = false;
     }
 
     public void ApplyPowerUpEffect(Rigidbody enemyRb, Vector3 playerPosition)
@@ -222,6 +284,11 @@ public class PowerUpSystem : MonoBehaviour
         {
             Debug.Log("HasPowerJumpPowerUp is TRUE");
             StartCoroutine(PowerJumpPowerUpCountdownRoutine());
+        }
+        else if (HasInvisibilityPowerUp)
+        {
+            Debug.Log("HasInvisibilityPowerUp is TRUE");
+            StartCoroutine(InvisibilityPowerUpCountdownRoutine());
         }
         else
         {

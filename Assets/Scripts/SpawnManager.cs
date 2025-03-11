@@ -1,141 +1,139 @@
+using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class SpawnManager : MonoBehaviour
 {
+    [SerializeField] private int _waveNumber = 1;
+
     [Header("Enemies")]
     [SerializeField] private float _spawnRange = 9.0f;
     [SerializeField] private GameObject _easyEnemyPrefab;
     [SerializeField] private GameObject _normalEnemyPrefab;
     [SerializeField] private GameObject _hardEnemyPrefab;
     [SerializeField] private GameObject _bossEnemyPrefab;
+    private int _enemyCount;
 
     [Header("Power-Ups")]
     [SerializeField] private GameObject _powerUpPrefab;
     [SerializeField] private GameObject _rocketPowerUpPrefab;
     [SerializeField] private GameObject _powerJumpPowerUpPrefab;
-    //[SerializeField] private GameObject _invisibilityPowerUpPrefab;
+    [SerializeField] private GameObject _invisibilityPowerUpPrefab;
+    private GameObject[] powerUpPrefabs;
 
-    private int _enemyCount;
-    [SerializeField] private int _waveNumber = 1;
+    [Header("UI")]
+    [SerializeField] private TextMeshProUGUI _waveText;
+    [SerializeField] private float _waveTextDefaultSize = 60f;
+    [SerializeField] private float _waveTextBigSize = 120f;
+    [SerializeField] private float _waveTextAnimationDuration = 0.8f;
 
-    // Wave Definitions - Hardcoded wave compositions
-    [System.Serializable]
-    public class WaveConfig
-    {
-        public int waveNumber;
-        public int easyEnemies;
-        public int normalEnemies;
-        public int hardEnemies;
-        public bool spawnBoss;
-    }
-
-    public List<WaveConfig> waves = new List<WaveConfig>()
-    {
-        new WaveConfig { waveNumber = 1, easyEnemies = 1, normalEnemies = 0, hardEnemies = 0, spawnBoss = false },
-        new WaveConfig { waveNumber = 2, easyEnemies = 2, normalEnemies = 0, hardEnemies = 0, spawnBoss = false },
-        new WaveConfig { waveNumber = 3, easyEnemies = 1, normalEnemies = 1, hardEnemies = 0, spawnBoss = false },
-        new WaveConfig { waveNumber = 4, easyEnemies = 2, normalEnemies = 2, hardEnemies = 0, spawnBoss = false },
-        new WaveConfig { waveNumber = 5, easyEnemies = 3, normalEnemies = 1, hardEnemies = 1, spawnBoss = false },
-        new WaveConfig { waveNumber = 6, easyEnemies = 3, normalEnemies = 2, hardEnemies = 2, spawnBoss = false },
-        new WaveConfig { waveNumber = 7, easyEnemies = 3, normalEnemies = 0, hardEnemies = 0, spawnBoss = true },
-        new WaveConfig { waveNumber = 8, easyEnemies = 0, normalEnemies = 3, hardEnemies = 2, spawnBoss = false },
-        new WaveConfig { waveNumber = 9, easyEnemies = 0, normalEnemies = 3, hardEnemies = 3, spawnBoss = false },
-        new WaveConfig { waveNumber = 10, easyEnemies = 4, normalEnemies = 3, hardEnemies = 2, spawnBoss = false },
-        new WaveConfig { waveNumber = 11, easyEnemies = 4, normalEnemies = 3, hardEnemies = 3, spawnBoss = false },
-        new WaveConfig { waveNumber = 12, easyEnemies = 2, normalEnemies = 1, hardEnemies = 1, spawnBoss = true }
-    };
+    [Header("Score")]
+    [SerializeField] private TextMeshProUGUI _scoreText;
+    private int _score = 0;
 
     public int WaveNumber
     {
         get { return _waveNumber; }
     }
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+
+    public int Score
     {
-        SpawnEnemyWave();
-        SpawnPowerUp();
+        get { return _score; }
+        protected set { _score = value; }
     }
 
-    // Update is called once per frame
+    void Start()
+    {
+        powerUpPrefabs = new GameObject[] { _powerUpPrefab, _rocketPowerUpPrefab, _powerJumpPowerUpPrefab, _invisibilityPowerUpPrefab };
+        _score = 0;
+        UpdateScoreUI();
+        StartNewWave();
+    }
+
     void Update()
     {
         _enemyCount = FindObjectsByType<EnemyBase>(FindObjectsSortMode.None).Length;
         if (_enemyCount == 0)
         {
             _waveNumber++;
-            if (_waveNumber <= waves.Count)
-            {
-                SpawnEnemyWave();
-                if (_waveNumber % 2 == 0)
-                {
-                    SpawnPowerUp();
-                }
-            }
-            else
-            {
-                Debug.Log("--- ALL WAVES COMPLETED! --- Game Win Condition Here!");
-                // Implement Game Win condition here (e.g., show win screen, stop spawning, etc.)
-                enabled = false; // Disable SpawnManager to stop further updates
-            }
-
+            StartNewWave();
         }
     }
 
-    void SpawnEnemyWave()
+    void StartNewWave()
     {
-        if (_waveNumber > waves.Count)
+        SpawnWave(_waveNumber);
+        if (_waveNumber == 1)
         {
-            return;
+            _waveText.text = "Wave " + _waveNumber;
+            _waveText.fontSize = _waveTextDefaultSize;
+            _waveText.gameObject.SetActive(true);
         }
-
-        WaveConfig currentWave = waves[_waveNumber - 1];
-        Debug.Log($"--- Starting Wave {currentWave.waveNumber} ---");
-        SpawnEnemies(currentWave.easyEnemies, _easyEnemyPrefab, "Easy"); // Use new generic SpawnEnemies
-        SpawnEnemies(currentWave.normalEnemies, _normalEnemyPrefab, "Normal"); // Use new generic SpawnEnemies
-        SpawnEnemies(currentWave.hardEnemies, _hardEnemyPrefab, "Hard"); // Use new generic SpawnEnemies
-
-        if (currentWave.spawnBoss)
+        else if (_waveNumber % 10 == 0)
         {
-            SpawnBossEnemy();
-            Debug.LogWarning($"*** BOSS WAVE {currentWave.waveNumber} SPAWNED! ***");
+            StartCoroutine(AnimateWaveText("Boss Wave"));
+        }
+        else
+        {
+            StartCoroutine(AnimateWaveText("Wave: " + _waveNumber));
+        }
+        // Every 2nd wave, spawn a power-up
+        if (_waveNumber % 2 == 0)
+        {
+            SpawnPowerUp();
         }
     }
 
+    /// Dynamically determines how many enemies to spawn based on wave number.
+    void SpawnWave(int waveNumber)
+    {
+        Debug.Log($">>> Wave {waveNumber}");
+        bool spawnBoss = (waveNumber % 10 == 0);
+
+        //Easy enemies
+        int easyCount = (waveNumber - 1) % 4 + 1;
+
+        //Normal enemies
+        int normalCount = (waveNumber >= 5) ? (waveNumber - 5) / 4 + 1 : 0;
+
+        //Hard enemies
+        int hardCount = (waveNumber >= 21) ? ((waveNumber - 21) / 16) + 1 : 0;
+
+        if (spawnBoss)
+        {
+            Debug.Log("BOSS APPEARS!");
+            SpawnEnemy(_bossEnemyPrefab);
+        }
+
+        //Spawn calculated number of each enemy type
+        SpawnEnemies(easyCount, _easyEnemyPrefab, "Easy");
+        SpawnEnemies(normalCount, _normalEnemyPrefab, "Normal");
+        SpawnEnemies(hardCount, _hardEnemyPrefab, "Hard");
+    }
+
+    /// Spawns a specified number of enemies of a given type.
     private void SpawnEnemies(int count, GameObject prefabToSpawn, string enemyTypeName)
     {
         for (int i = 0; i < count; i++)
         {
-            Debug.Log($"Spawning {enemyTypeName} Enemy");
-            Instantiate(prefabToSpawn, GenerateSpawnPosition(), prefabToSpawn.transform.rotation);
+            SpawnEnemy(prefabToSpawn);
         }
     }
 
-    private void SpawnBossEnemy()
+
+    private void SpawnEnemy(GameObject prefabToSpawn)
     {
-        Debug.LogWarning("--- Spawning BOSS Enemy ---");
-        Instantiate(_bossEnemyPrefab, GenerateSpawnPosition(), _bossEnemyPrefab.transform.rotation);
+        Instantiate(prefabToSpawn, GenerateSpawnPosition(), prefabToSpawn.transform.rotation);
     }
 
     private void SpawnPowerUp()
     {
-        float randomPowerUp = Random.value;
-        if (randomPowerUp < 0.33f)
-        {
-            Debug.Log("Spawning Speed Boost PowerUp");
-            Instantiate(_powerUpPrefab, GenerateSpawnPosition(), _powerUpPrefab.transform.rotation);
-        }
-        else if(randomPowerUp < 0.66f)
-        {
-            Debug.Log("Spawning Rocket PowerUp");
-            Instantiate(_rocketPowerUpPrefab, GenerateSpawnPosition(), _rocketPowerUpPrefab.transform.rotation);
-        }
-        else
-        {
-            Debug.Log("Spawning Power Jump PowerUp");
-            Instantiate(_powerJumpPowerUpPrefab, GenerateSpawnPosition(), _powerJumpPowerUpPrefab.transform.rotation);
-        }
+        Vector3 spawnPos = GenerateSpawnPosition();
+        int powerUpIndex = Random.Range(0, powerUpPrefabs.Length);
+        Instantiate(powerUpPrefabs[powerUpIndex], spawnPos, Quaternion.identity);
     }
 
     private Vector3 GenerateSpawnPosition()
@@ -143,5 +141,47 @@ public class SpawnManager : MonoBehaviour
         float spawnPosX = Random.Range(-_spawnRange, _spawnRange);
         float spawnPosZ = Random.Range(-_spawnRange, _spawnRange);
         return new Vector3(spawnPosX, 0, spawnPosZ);
+    }
+
+    IEnumerator AnimateWaveText(string waveText)
+    {
+        _waveText.text = waveText;
+
+        float timeElapsed = 0f;
+        float firstDuration = _waveTextAnimationDuration / 4f;
+        float secondDuration = _waveTextAnimationDuration - firstDuration;
+
+        _waveText.fontSize = _waveTextBigSize;
+
+        while (timeElapsed < firstDuration)
+        {
+            float t = timeElapsed / firstDuration;
+            float currentSize = Mathf.Lerp(_waveTextBigSize, 125f, t);
+            _waveText.fontSize = currentSize;
+
+            timeElapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        while (timeElapsed < secondDuration)
+        {
+            float t = timeElapsed / secondDuration;
+            float currentSize = Mathf.Lerp(125f, _waveTextDefaultSize, t);
+            _waveText.fontSize = currentSize;
+
+            timeElapsed += Time.deltaTime;
+            yield return null;
+        }
+    }
+
+    public void UpdateScoreUI()
+    {
+        _scoreText.text = "Score " + _score.ToString();
+    }
+
+    public void IncreaseScore(int amount)
+    {
+        Score += amount;
+        UpdateScoreUI();
     }
 }

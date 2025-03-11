@@ -7,6 +7,9 @@ public class EnemyBase : MonoBehaviour
     private Rigidbody _enemyRb;
     private GameObject _player;
 
+    [Header("Score")]
+    [SerializeField] private int _scoreValue = 10;
+
     public float Speed
     {
         get { return _speed; }
@@ -43,7 +46,7 @@ public class EnemyBase : MonoBehaviour
 
         if (transform.position.y < -10)
         {
-            Destroy(gameObject);
+            Die();
         }
     }
 
@@ -56,13 +59,11 @@ public class EnemyBase : MonoBehaviour
     protected virtual void Die()
     {
         Debug.Log("EnemyBase Died!");
+        SpawnManager spawnManager = FindFirstObjectByType<SpawnManager>();
+        if (spawnManager != null)
+        {
+            spawnManager.IncreaseScore(_scoreValue);
+        }
         Destroy(gameObject);
-    }
-
-    public virtual void TakeDamage(int damageAmount)
-    {
-        // Basic take damage logic - subclasses can extend or override
-        // For now, basic enemy doesn't really 'take damage' in a complex way
-        Die(); // For now, any damage kills the base enemy immediately
     }
 }

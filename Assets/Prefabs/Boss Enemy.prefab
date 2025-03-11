@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 942173321027631899}
   - component: {fileID: 4507885103825639071}
   - component: {fileID: 2541442934273942227}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Boss Enemy
   m_TagString: Enemy
   m_Icon: {fileID: 0}
@@ -165,3 +165,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _speed: 3
   _pushResistance: 10
+  _scoreValue: 10

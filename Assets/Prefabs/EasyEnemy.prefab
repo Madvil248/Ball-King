@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 9188865425221060587}
   - component: {fileID: 5583202089922504513}
   - component: {fileID: 240629361206154565}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: EasyEnemy
   m_TagString: Enemy
   m_Icon: {fileID: 0}
@@ -165,3 +165,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _speed: 3
   _pushResistance: 1
+  _scoreValue: 1

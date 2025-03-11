@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 4208453004266131677}
   m_Layer: 0
   m_Name: InvisibilityPowerUpPrefab
-  m_TagString: Untagged
+  m_TagString: InvisibilityPowerUp
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

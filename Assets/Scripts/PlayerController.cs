@@ -67,6 +67,14 @@ public class PlayerController : MonoBehaviour
             }
             Destroy(other.gameObject);
         }
+        else if (other.CompareTag("InvisibilityPowerUp"))
+        {
+            if (_powerUpSystem != null)
+            {
+                _powerUpSystem.CollectInvisibilityPowerUp();
+            }
+            Destroy(other.gameObject);
+        }
     }
 
     private void OnCollisionEnter(Collision collision)
