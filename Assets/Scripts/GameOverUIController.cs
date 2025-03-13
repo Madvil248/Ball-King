@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -8,19 +11,21 @@ public class GameOverUIController : MonoBehaviour
     [Header("UI Elements")]
     [SerializeField] private TextMeshProUGUI _gameOverText;
     [SerializeField] private TextMeshProUGUI _finalScoreText;
+    [SerializeField] private TextMeshProUGUI _topHighScoresText;
     [SerializeField] private TMP_InputField _nameInputField;
     [SerializeField] private Button _submitScoreButton;
     [SerializeField] private Button _restartButton;
     [SerializeField] private Button _mainMenuButton;
 
+    private int _finalScore;
+
     void Start()
     {
-        int finalScore = GameOverData.FinalScore;
-        SetFinalScore(finalScore);
-        Debug.Log("Game Over Scene Loaded. Final Score: " + finalScore);
+        _finalScore = GameOverData.FinalScore;
+        SetFinalScore(_finalScore);
+        Debug.Log("Game Over Scene Loaded. Final Score: " + _finalScore);
     }
 
-    // Update is called once per frame
     void Update()
     {
 
@@ -48,13 +53,16 @@ public class GameOverUIController : MonoBehaviour
         {
             gameManager.AddHighScore(playerName, finalScore);
             Debug.Log($"Score Submitted to GameManager! Player: {playerName}, Score: {finalScore}");
-            PrintHighScoresToConsole(gameManager);
         }
         else
         {
             Debug.LogError("GameManager Instance not found! Cannot submit high score.");
         }
         _nameInputField.text = "";
+        _finalScoreText.gameObject.SetActive(false);
+        _nameInputField.gameObject.SetActive(false);
+        _submitScoreButton.gameObject.SetActive(false);
+        DisplayTopHighScores(playerName, _finalScore);
     }
 
     public void OnRestartButtonClicked()
@@ -65,18 +73,31 @@ public class GameOverUIController : MonoBehaviour
 
     public void OnMainMenuButtonClicked()
     {
-        //SceneManager.LoadScene("MainMenuScene");
+        SceneManager.LoadScene("MainMenuScene");
         Debug.Log("Main Menu Button Clicked!");
     }
 
-    private void PrintHighScoresToConsole(GameManager gm)
+    private void DisplayTopHighScores(string playerName, int playerScore)
     {
-        Debug.Log("--- High Score List from GameManager (Count: " + gm.GetHighScores().Count + ") ---");
-
-        foreach (HighScoreEntry entry in gm.GetHighScores())
+        GameManager gameManager = GameManager.Instance;
+        if (gameManager != null)
         {
-            Debug.Log($"{entry.PlayerName}: {entry.Score}");
+            Tuple<List<HighScoreEntry>, int> highScoreData = gameManager.GetTopHighScores(10, playerName, playerScore);
+            List<HighScoreEntry> topScores = highScoreData.Item1;
+            int playerRank = highScoreData.Item2;
+
+            string highScoresText = "";
+            for (int i = 0; i < Mathf.Min(10, topScores.Count); i++)
+            {
+                highScoresText += $"{i + 1} {topScores[i].PlayerName} - {topScores[i].Score}\n";
+            }
+            if (playerRank > 10)
+            {
+                highScoresText += $"(Your Score)\n";
+                highScoresText += $"{playerRank} {playerName} - {playerScore}\n";
+            }
+            _topHighScoresText.text = highScoresText;
         }
-        Debug.Log("--- End High Score List from GameManager ---");
+        _topHighScoresText.gameObject.SetActive(true);
     }
 }

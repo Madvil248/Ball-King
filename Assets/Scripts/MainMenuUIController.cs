@@ -10,6 +10,7 @@ public class MainMenuUIController : MonoBehaviour
 {
     [Header("UI Elements")]
     [SerializeField] private TextMeshProUGUI _gameTitleText;
+    [SerializeField] private RectTransform _gameTitleRectTransform;
     [SerializeField] private Button _playButton;
     [SerializeField] private Button _highScoresButton;
     [SerializeField] private Button _optionsButton;
@@ -19,6 +20,10 @@ public class MainMenuUIController : MonoBehaviour
     [SerializeField] private GameObject _highScorePanel;
     [SerializeField] private TextMeshProUGUI _highScoreListText;
     [SerializeField] private Button _backToMainMenuButton;
+    [SerializeField] private TextMeshProUGUI _highScoresTitleText;
+
+    private Vector2 _originalGameTitlePosition;
+    private bool _originalPositionSaved = false;
 
     void Start()
     {
@@ -40,6 +45,13 @@ public class MainMenuUIController : MonoBehaviour
     {
         Debug.Log("High Scores Button Clicked - (Functionality to be implemented later)");
 
+        if (!_originalPositionSaved)
+        {
+            _originalGameTitlePosition = _gameTitleRectTransform.anchoredPosition;
+            _originalPositionSaved = true;
+        }
+        _gameTitleRectTransform.anchoredPosition = new Vector2(_gameTitleRectTransform.anchoredPosition.x, -100);
+
         GameManager gameManager = GameManager.Instance;
         if (gameManager != null)
         {
@@ -49,6 +61,7 @@ public class MainMenuUIController : MonoBehaviour
             _highScoreListText.text = highScoreString;
 
             _highScorePanel.gameObject.SetActive(true);
+            _highScoresTitleText.gameObject.SetActive(true);
             SetMainMenuButtonsActive(false);
         }
         else
@@ -77,6 +90,8 @@ public class MainMenuUIController : MonoBehaviour
         Debug.Log("Back to Main Menu Button Clicked - Hiding High Scores Panel.");
         _highScorePanel.gameObject.SetActive(false);
         SetMainMenuButtonsActive(true);
+
+        _gameTitleRectTransform.anchoredPosition = _originalGameTitlePosition;
     }
 
     private string FormatHighScores(List<HighScoreEntry> scores)
@@ -84,11 +99,6 @@ public class MainMenuUIController : MonoBehaviour
         string formattedText = "";
         if (scores != null && scores.Count > 0)
         {
-            for (int i = 0; i < scores.Count; i++)
-            {
-                HighScoreEntry entry = scores[i];
-                formattedText += $"{i + 1} {entry.PlayerName} - {entry.Score}\n";
-            }
             for (int i = 0; i < scores.Count; i++)
             {
                 HighScoreEntry entry = scores[i];

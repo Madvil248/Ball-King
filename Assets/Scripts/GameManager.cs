@@ -1,11 +1,12 @@
-using NUnit.Framework;
-using UnityEngine;
+using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
     private List<HighScoreEntry> _highScoreList = new List<HighScoreEntry>();
+    private const string HighScoreKey = "HighScoreList";
 
     private void Awake()
     {
@@ -20,17 +21,12 @@ public class GameManager : MonoBehaviour
             Debug.LogWarning("Another GameManager instance detected! Destroying the new one.");
             Destroy(gameObject);
         }
+        LoadHighScores();
     }
 
     void Start()
     {
         Debug.Log("GameManager Start() called.");
-        AddHighScore("Alice", 1500);
-        AddHighScore("Bob", 2200);
-        AddHighScore("Charlie", 1800);
-        AddHighScore("David", 900);
-        AddHighScore("Eve", 2500);
-        AddHighScore("Frank", 1200);
     }
 
     void Update()
@@ -44,7 +40,45 @@ public class GameManager : MonoBehaviour
         _highScoreList.Add(newEntry);
         _highScoreList.Sort((a, b) => b.Score.CompareTo(a.Score));
         Debug.Log($"High Score Added: {playerName} - {score}. High Score List Count: {_highScoreList.Count}");
-        PrintHighScoresToConsole();
+        SaveHighScores();
+    }
+
+    public Tuple<List<HighScoreEntry>, int> GetTopHighScores(int count, string currentPlayerName, int currentPlayerScore)
+    {
+        _highScoreList.Sort((a, b) => b.Score.CompareTo(a.Score));
+        List<HighScoreEntry> topScores = _highScoreList.GetRange(0, Mathf.Min(count, _highScoreList.Count));
+        int playerRank = -1;
+
+        bool scoreInTop = false;
+        foreach (var scoreEntry in topScores)
+        {
+            if (scoreEntry.PlayerName == currentPlayerName && scoreEntry.Score == currentPlayerScore)
+            {
+                scoreInTop = true;
+                break;
+            }
+        }
+
+        if (!scoreInTop)
+        {
+            for (int i = 10; i < _highScoreList.Count; i++)
+            {
+                if (_highScoreList[i].PlayerName == currentPlayerName && _highScoreList[i].Score == currentPlayerScore)
+                {
+                    playerRank = i + 1;
+                    break;
+                }
+            }
+
+            if (playerRank != -1)
+            {
+                List<HighScoreEntry> extendedList = new List<HighScoreEntry>(topScores);
+                extendedList.Add(new HighScoreEntry(currentPlayerName, currentPlayerScore));
+                return Tuple.Create(extendedList, playerRank);
+            }
+        }
+
+        return Tuple.Create(topScores, -1);
     }
 
     public List<HighScoreEntry> GetHighScores()
@@ -52,13 +86,46 @@ public class GameManager : MonoBehaviour
         return _highScoreList;
     }
 
-    private void PrintHighScoresToConsole()
+    public void SaveHighScores()
     {
-        Debug.Log("--- High Score List (Count: " + _highScoreList.Count + ") ---");
-        foreach (HighScoreEntry entry in _highScoreList)
+        HighScoreListWrapper wrapper = new HighScoreListWrapper();
+        wrapper.highScoreList = _highScoreList;
+
+        string json = JsonUtility.ToJson(wrapper);
+        PlayerPrefs.SetString(HighScoreKey, json);
+        PlayerPrefs.Save();
+        Debug.Log("High Scores Saved to PlayerPrefs");
+    }
+
+    public void LoadHighScores()
+    {
+        string json = PlayerPrefs.GetString(HighScoreKey, "");
+
+        if (!string.IsNullOrEmpty(json))
         {
-            Debug.Log($"{entry.PlayerName}: {entry.Score}");
+            HighScoreListWrapper wrapper = JsonUtility.FromJson<HighScoreListWrapper>(json);
+            if (wrapper != null && wrapper.highScoreList != null)
+            {
+                _highScoreList = wrapper.highScoreList;
+                Debug.Log($"High Scores Loaded from PlayerPrefs. Count: {_highScoreList.Count}");
+            }
+            else
+            {
+                Debug.LogWarning("Failed to deserialize High Score List from PlayerPrefs. Starting with an empty list.");
+                _highScoreList = new List<HighScoreEntry>();
+            }
         }
-        Debug.Log("--- End High Score List ---");
+        else
+        {
+            Debug.Log("No High Scores found in PlayerPrefs. Starting with an empty list.");
+            _highScoreList = new List<HighScoreEntry>();
+        }
+    }
+
+    private void OnApplicationQuit()
+    {
+        SaveHighScores();
+        Debug.Log("High Scores Saved on Application Quit");
     }
 }
+
