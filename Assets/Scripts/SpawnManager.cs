@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class SpawnManager : MonoBehaviour
@@ -183,5 +184,13 @@ public class SpawnManager : MonoBehaviour
     {
         Score += amount;
         UpdateScoreUI();
+    }
+
+    public void GameOver()
+    {
+        Debug.Log("Game Over! Player fell off.");
+        int finalScore = Score;
+        GameOverData.FinalScore = finalScore;
+        SceneManager.LoadScene("GameOverScene");
     }
 }

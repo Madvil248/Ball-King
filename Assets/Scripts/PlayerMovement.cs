@@ -52,6 +52,19 @@ public class PlayerMovement : MonoBehaviour
             HandleJumpInput();
         }
         CheckGround();
+
+        if (transform.position.y < -10f)
+        {
+            SpawnManager spawnManager = FindFirstObjectByType<SpawnManager>();
+            if (spawnManager != null)
+            {
+                spawnManager.GameOver();
+            }
+            else
+            {
+                Debug.LogError("SpawnManager not found! Cannot trigger Game Over.");
+            }
+        }
     }
 
     private void HandleJumpInput()
