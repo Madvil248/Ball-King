@@ -1,22 +1,23 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
 public class PowerUpSystem : MonoBehaviour
 {
     private PlayerMovement _playerMovement;
-    private bool _hasPowerUp = false;
-    private Vector3 _powerUpOffset = new Vector3(0, -0.5f, 0);
+    private bool _isPowerBoostActive = false;
+    private Vector3 _powerBoostIndicatorOffset = new Vector3(0, -0.5f, 0);
+    private Dictionary<string, int> _powerUpInventory = new Dictionary<string, int>();
 
     [Header("Power Powerup")]
-    [SerializeField] private float _powerUpStrength = 15.0f;
+    [SerializeField] private float _powerBoostStrength = 15.0f;
     [SerializeField] private float _powerUpDuration = 7f;
-    [SerializeField] private GameObject _powerUpIndicator;
+    [SerializeField] private GameObject _powerBoostIndicator;
 
     [Header("Rocket Powerup")]
     [SerializeField] private GameObject _rocketPrefab;
     [SerializeField] private Transform _rocketSpawnPoint;
-    private bool _hasRocketPowerUp = false;
 
     [Header("Power Jump Powerup")]
     [SerializeField] private float _powerJumpDuration = 30f;
@@ -32,63 +33,46 @@ public class PowerUpSystem : MonoBehaviour
     private int _originalLayer;
     [SerializeField] private string _invisibilityLayerName = "InvisiblePlayer";
 
-    public bool HasPowerUp
+    public bool HasPowerPowerUp
     {
-        get { return _hasPowerUp; }
-        private set { _hasPowerUp = value; }
-    }
-
-    public bool HasRocketPowerUp
-    {
-        get { return _hasRocketPowerUp; }
-        private set { _hasRocketPowerUp = value; }
-    }
-
-    public bool HasPowerJumpPowerUp
-    {
-        get { return _isPowerJumpPowerUpActive; }
-        private set { _isPowerJumpPowerUpActive = value; }
-    }
-
-    public bool HasInvisibilityPowerUp
-    {
-        get { return _hasInvisibilityPowerUp; }
-        private set { _hasInvisibilityPowerUp = value; }
+        get { return _isPowerBoostActive; }
+        private set { _isPowerBoostActive = value; }
     }
 
     public GameObject PowerUpIndicator
     {
-        get { return _powerUpIndicator; }
-        private set { _powerUpIndicator = value; }
+        get { return _powerBoostIndicator; }
+        private set { _powerBoostIndicator = value; }
     }
 
-    public float PowerUpStrength
+    public float PowerBoostStrength
     {
-        get { return _powerUpStrength; }
-        private set { _powerUpStrength = value; }
+        get { return _powerBoostStrength; }
+        private set { _powerBoostStrength = value; }
     }
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        if (_powerUpIndicator == null)
+        _playerMovement = GetComponent<PlayerMovement>();
+        if (_playerMovement == null)
         {
-            Debug.LogError("Power-Up Indicator is not assigned in PowerUpSystem!");
+            Debug.LogError("PlayerMovement component not found on PowerUpSystem! Ensure PowerUpSystem and PlayerMovement are on the same GameObject.");
+        }
+
+        if (_powerBoostIndicator != null)
+        {
+            _powerBoostIndicator.gameObject.SetActive(false);
         }
         else
         {
-            _powerUpIndicator.gameObject.SetActive(false);
+            Debug.LogError("Power-Up Indicator is not assigned in PowerUpSystem!");
         }
 
         if (_rocketSpawnPoint == null)
         {
             Debug.LogError("Rocket Spawn Point is not assigned on PowerUpSystem! Please create and assign one.");
         }
-        _playerMovement = GetComponent<PlayerMovement>();
-        if (_playerMovement == null)
-        {
-            Debug.LogError("PlayerMovement component not found on PowerUpSystem! Ensure PowerUpSystem and PlayerMovement are on the same GameObject.");
-        }
+
 
         if (_playerRenderer != null)
         {
@@ -101,65 +85,180 @@ public class PowerUpSystem : MonoBehaviour
         }
     }
 
-    // For Speed Boost PowerUp collect
-    public void CollectPowerUp()
+    public void PowerUpCollected(string powerUpName)
     {
-        HasPowerUp = true;
-        Debug.Log("Speed Boost PowerUp Collected! Press Fire button to activate.");
-        if (_powerUpIndicator != null)
+        Debug.Log($"{powerUpName} PowerUp Collected by PowerUpSystem.");
+
+        if (_powerUpInventory.ContainsKey(powerUpName))
         {
-            PowerUpIndicator.gameObject.SetActive(true);
+            _powerUpInventory[powerUpName]++;
         }
         else
         {
-            Debug.Log("PowerUpSystem: _powerUpIndicator IS NULL!  Assignment problem?"); // Added Debug.Log - Check for null assignment
+            _powerUpInventory.Add(powerUpName, 1);
+        }
+        Debug.Log($"PowerUpSystem Inventory: {string.Join(", ", _powerUpInventory.Select(kvp => $"{kvp.Key}: {kvp.Value}"))}");
+    }
+
+    public int GetPowerUpCount(string powerUpName)
+    {
+        if (_powerUpInventory.ContainsKey(powerUpName))
+        {
+            return _powerUpInventory[powerUpName];
+        }
+        return 0;
+    }
+
+    public void ActivatePowerBoost()
+    {
+        if (_powerUpInventory.ContainsKey("Power") && _powerUpInventory["Power"] > 0 && !_isPowerBoostActive)
+        {
+            _powerUpInventory["Power"]--;
+            _isPowerBoostActive = true;
+            Debug.Log("Power Boost Activated!");
+            if (_powerBoostIndicator != null)
+            {
+                PowerUpIndicator.gameObject.SetActive(true);
+            }
+            StartCoroutine(PowerBoostCountdownRoutine());
+            if (GetComponent<Renderer>() != null)
+            {
+                GetComponent<Renderer>().material.color = Color.yellow;
+            }
+        }
+        else if (_isPowerBoostActive)
+        {
+            Debug.Log("Speed Boost is already active.");
+        }
+        else
+        {
+            Debug.Log("No Speed Boost available.");
         }
     }
 
-    public void CollectRocketPowerUp()
-    {
-        HasRocketPowerUp = true;
-        Debug.Log("Rocket PowerUp Collected! Press Fire button to launch rocket.");
-    }
-
-    public void CollectPowerJumpPowerUp()
-    {
-        HasPowerJumpPowerUp = true;
-        Debug.Log("Power Jump PowerUp Collected! Press F key to activate Jump.");
-    }
-
-    public void CollectInvisibilityPowerUp()
-    {
-        HasInvisibilityPowerUp = true;
-        Debug.Log("Invisibility PowerUp Collected! Press F key to activate Invisibility.");
-    }
-
-    private IEnumerator PowerUpCountdownRoutine()
+    private IEnumerator PowerBoostCountdownRoutine()
     {
         yield return new WaitForSeconds(_powerUpDuration);
-        HasPowerUp = false;
+        HasPowerPowerUp = false;
 
-        if (_powerUpIndicator != null)
+        if (_powerBoostIndicator != null)
         {
             PowerUpIndicator.gameObject.SetActive(false);
         }
+        if (GetComponent<Renderer>() != null)
+        {
+            GetComponent<Renderer>().material.color = _originalColor;
+        }
+    }
+
+    public void ApplyPowerBoostEffect(Rigidbody enemyRb, Vector3 playerPosition)
+    {
+        if (_isPowerBoostActive)
+        {
+            Vector3 awayFromPlayer = enemyRb.transform.position - playerPosition;
+            enemyRb.AddForce(awayFromPlayer * PowerBoostStrength, ForceMode.Impulse);
+        }
+    }
+
+    public void UpdatePowerBoostIndicatorPosition(Vector3 playerPosition)
+    {
+        if (_isPowerBoostActive && _powerBoostIndicator != null)
+        {
+            Vector3 indicatorPosition = playerPosition + _powerBoostIndicatorOffset;
+            PowerUpIndicator.transform.position = indicatorPosition;
+        }
+    }
+
+    public void ActivateRocket()
+    {
+        if (_powerUpInventory.ContainsKey("Rocket") && _powerUpInventory["Rocket"] > 0)
+        {
+            _powerUpInventory["Rocket"]--;
+            LaunchRocket();
+        }
         else
         {
-            Debug.Log("PowerUpSystem: _powerUpIndicator IS NULL in CountdownRoutine!  Assignment problem?"); // Added Debug.Log - Check for null assignment
+            Debug.Log("No Rockets available.");
+        }
+    }
+
+    private void LaunchRocket()
+    {
+        if (_rocketPrefab == null || _rocketSpawnPoint == null)
+        {
+            Debug.LogError("Rocket Prefab or Rocket Spawn Point not assigned in PowerUpSystem!");
+            return;
+        }
+
+        Transform targetEnemy = GetRandomEnemyTarget();
+
+        if (targetEnemy != null)
+        {
+            Debug.Log("Rocket Launched! Target Acquired: " + targetEnemy.name);
+            GameObject rocketInstance = Instantiate(_rocketPrefab, _rocketSpawnPoint.position, _rocketSpawnPoint.rotation);
+            RocketProjectile rocketProjectile = rocketInstance.GetComponent<RocketProjectile>();
+            if (rocketProjectile != null)
+            {
+                rocketProjectile.SetTarget(targetEnemy);
+            }
+            else
+            {
+                Debug.LogError("Rocket Prefab is missing RocketProjectile script!");
+                Destroy(rocketInstance);
+            }
+        }
+        else
+        {
+            Debug.LogWarning("No enemies found to target for Rocket Powerup!");
+            // Optionally, you could play a "no target" sound or visual feedback here
+        }
+    }
+
+    public void ActivatePowerJump()
+    {
+        if (_powerUpInventory.ContainsKey("Power Jump") && _powerUpInventory["Power Jump"] > 0 && _isPowerJumpPowerUpActive)
+        {
+            _powerUpInventory["Power Jump"]--;
+            _isPowerJumpPowerUpActive = true;
+            _playerMovement.IsPowerJumpActive = true;
+            Debug.Log("Power Jump Activated!");
+            StartCoroutine(PowerJumpPowerUpCountdownRoutine());
+        }
+        else if (_isPowerJumpPowerUpActive)
+        {
+            Debug.Log("Power Jump is already active.");
+        }
+        else
+        {
+            Debug.Log("Power Jump is already active.");
         }
     }
 
     private IEnumerator PowerJumpPowerUpCountdownRoutine()
     {
-        _isPowerJumpPowerUpActive = true;
-        _playerMovement.IsPowerJumpActive = true;
-        Debug.Log("Power Jump Activated!");
-
         yield return new WaitForSeconds(_powerJumpDuration);
 
         _isPowerJumpPowerUpActive = false;
         _playerMovement.IsPowerJumpActive = false;
         Debug.Log("Power Jump PowerUp Expired.");
+    }
+
+    public void ActivateInvisibility()
+    {
+        if (_powerUpInventory.ContainsKey("Invisibility") && _powerUpInventory["Invisibility"] > 0 && !_hasInvisibilityPowerUp)
+        {
+            _powerUpInventory["Invisibility"]--;
+            _hasInvisibilityPowerUp = true;
+            StartCoroutine(InvisibilityPowerUpCountdownRoutine());
+        }
+        else if (_hasInvisibilityPowerUp)
+        {
+            Debug.Log("Invisibility is already active.");
+        }
+        else
+        {
+            Debug.Log("Invisibility is already active.");
+        }
     }
 
     private IEnumerator InvisibilityPowerUpCountdownRoutine()
@@ -194,63 +293,6 @@ public class PowerUpSystem : MonoBehaviour
         _hasInvisibilityPowerUp = false;
     }
 
-    public void ApplyPowerUpEffect(Rigidbody enemyRb, Vector3 playerPosition)
-    {
-        if (HasPowerUp)
-        {
-            Vector3 awayFromPlayer = enemyRb.transform.position - playerPosition;
-            enemyRb.AddForce(awayFromPlayer * PowerUpStrength, ForceMode.Impulse);
-        }
-    }
-
-    public void UpdatePowerUpIndicatorPosition(Vector3 playerPosition)
-    {
-        if (_powerUpIndicator != null)
-        {
-            Vector3 indicatorPosition = playerPosition + _powerUpOffset;
-            PowerUpIndicator.transform.position = indicatorPosition;
-        }
-    }
-
-    private void LaunchRocket()
-    {
-        if (!HasRocketPowerUp)
-        {
-            Debug.LogWarning("Trying to launch rocket but Rocket PowerUp is not collected!");
-            return;
-        }
-
-        if (_rocketPrefab == null || _rocketSpawnPoint == null)
-        {
-            Debug.LogError("Rocket Prefab or Rocket Spawn Point not assigned in PowerUpSystem!");
-            return;
-        }
-
-        Transform targetEnemy = GetRandomEnemyTarget();
-
-        if (targetEnemy != null)
-        {
-            Debug.Log("Rocket Launched! Target Acquired: " + targetEnemy.name);
-            GameObject rocketInstance = Instantiate(_rocketPrefab, _rocketSpawnPoint.position, _rocketSpawnPoint.rotation);
-            RocketProjectile rocketProjectile = rocketInstance.GetComponent<RocketProjectile>();
-            if (rocketProjectile != null)
-            {
-                rocketProjectile.SetTarget(targetEnemy);
-            }
-            else
-            {
-                Debug.LogError("Rocket Prefab is missing RocketProjectile script!");
-                Destroy(rocketInstance);
-            }
-        }
-        else
-        {
-            Debug.LogWarning("No enemies found to target for Rocket Powerup!");
-            // Optionally, you could play a "no target" sound or visual feedback here
-        }
-        HasRocketPowerUp = false; // Reset Rocket Powerup flag after launching - one-time use per pickup
-    }
-
     private Transform GetRandomEnemyTarget()
     {
         EnemyBase[] enemies = FindObjectsByType<EnemyBase>(FindObjectsSortMode.None);
@@ -264,35 +306,5 @@ public class PowerUpSystem : MonoBehaviour
             }
         }
         return null;
-    }
-    public void ActivatePowerUp()
-    {
-        Debug.Log("ActivatePowerUp() function called!");
-        if (HasRocketPowerUp)
-        {
-            Debug.Log("HasRocketPowerUp is TRUE");
-            LaunchRocket();
-        }
-        else if (HasPowerUp)
-        {
-            Debug.Log("HasPowerUp is TRUE");
-            StartCoroutine(PowerUpCountdownRoutine());
-            GetComponent<Renderer>().material.color = Color.yellow;
-            Debug.Log("Speed Boost Activated!");
-        }
-        else if (HasPowerJumpPowerUp)
-        {
-            Debug.Log("HasPowerJumpPowerUp is TRUE");
-            StartCoroutine(PowerJumpPowerUpCountdownRoutine());
-        }
-        else if (HasInvisibilityPowerUp)
-        {
-            Debug.Log("HasInvisibilityPowerUp is TRUE");
-            StartCoroutine(InvisibilityPowerUpCountdownRoutine());
-        }
-        else
-        {
-            Debug.Log("No powerup active to activate.");
-        }
     }
 }

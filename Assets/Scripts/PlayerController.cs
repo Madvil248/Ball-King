@@ -1,24 +1,47 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
     private PlayerMovement _playerMovement;
     private PowerUpSystem _powerUpSystem;
+    private GameHUDController _hudController;
+    private string[] _availableAbilities;
+    private List<string> _collectedAbilitiesForHUD = new List<string>();
+    private int _currentAbilityIndex = -1;
 
     void Start()
     {
         _playerMovement = GetComponent<PlayerMovement>();
-        _powerUpSystem = GetComponent<PowerUpSystem>();
-
         if (_playerMovement == null)
         {
             Debug.LogError("PlayerMovement component not found on PlayerController!");
         }
+
+        _powerUpSystem = GetComponent<PowerUpSystem>();
         if (_powerUpSystem == null)
         {
             Debug.LogError("PowerUpSystem component not found on PlayerController!");
         }
+
+        _hudController = FindFirstObjectByType<GameHUDController>();
+        if (_hudController == null)
+        {
+            Debug.LogError("GameHUDController not found in the scene!");
+        }
+
+        SpawnManager spawnManager = FindFirstObjectByType<SpawnManager>();
+        if (spawnManager != null)
+        {
+            _availableAbilities = spawnManager.PowerUpPrefabNames;
+        }
+        else
+        {
+            Debug.LogError("SpawnManager not found!");
+            _availableAbilities = new string[0];
+        }
+        UpdateHUDAbilityDisplay();
     }
 
     void Update()
@@ -29,49 +52,67 @@ public class PlayerController : MonoBehaviour
         if (_playerMovement != null)
         {
             _playerMovement.Move(forwardInput, horizontalInput);
-            _powerUpSystem.UpdatePowerUpIndicatorPosition(transform.position);
+            if (_powerUpSystem != null)
+            {
+                _powerUpSystem.UpdatePowerBoostIndicatorPosition(transform.position);
+            }
         }
 
         if (Input.GetKeyDown(KeyCode.F))
         {
             if (_powerUpSystem != null)
             {
-                _powerUpSystem.ActivatePowerUp();
+                UseCurrentAbility();
             }
+        }
+        if (Input.GetKeyDown(KeyCode.Q))
+        {
+            SelectPreviousAbility();
+        }
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            SelectNextAbility();
         }
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("PowerUp"))
+        string collectedAbilityName = "";
+        if (other.CompareTag("PowerBoostPowerUp"))
         {
-            if (_powerUpSystem != null)
-            {
-                _powerUpSystem.CollectPowerUp();
-            }
-            Destroy(other.gameObject);
+            collectedAbilityName = "Power";
         }
         else if (other.CompareTag("RocketPowerUp"))
         {
-            if (_powerUpSystem != null)
-            {
-                _powerUpSystem.CollectRocketPowerUp();
-            }
-            Destroy(other.gameObject);
+            collectedAbilityName = "Rocket";
         }
         else if (other.CompareTag("PowerJumpPowerUp"))
         {
-            if (_powerUpSystem != null)
-            {
-                _powerUpSystem.CollectPowerJumpPowerUp();
-            }
-            Destroy(other.gameObject);
+            collectedAbilityName = "Power Jump";
         }
         else if (other.CompareTag("InvisibilityPowerUp"))
         {
+            collectedAbilityName = "Invisibility";
+        }
+
+        if (!string.IsNullOrEmpty(collectedAbilityName))
+        {
             if (_powerUpSystem != null)
             {
-                _powerUpSystem.CollectInvisibilityPowerUp();
+                _powerUpSystem.PowerUpCollected(collectedAbilityName);
+                if (!_collectedAbilitiesForHUD.Contains(collectedAbilityName))
+                {
+                    _collectedAbilitiesForHUD.Add(collectedAbilityName);
+                    if (_collectedAbilitiesForHUD.Count == 1)
+                    {
+                        _currentAbilityIndex = 0;
+                    }
+                    else if (_currentAbilityIndex == -1)
+                    {
+                        _currentAbilityIndex = 0;
+                    }
+                }
+                UpdateHUDAbilityDisplay();
             }
             Destroy(other.gameObject);
         }
@@ -86,7 +127,7 @@ public class PlayerController : MonoBehaviour
 
             if (enemyRigidBody != null && _powerUpSystem != null && enemyBase != null)
             {
-                _powerUpSystem.ApplyPowerUpEffect(enemyRigidBody, transform.position);
+                _powerUpSystem.ApplyPowerBoostEffect(enemyRigidBody, transform.position);
 
                 //Apply force to enemy based on Push Resistance
                 float pushForce = 100f;
@@ -96,5 +137,110 @@ public class PlayerController : MonoBehaviour
                 enemyRigidBody.AddForce(transform.forward * pushForce / resistanceFactor);
             }
         }
+    }
+
+    void UseCurrentAbility()
+    {
+        if (_currentAbilityIndex != -1 && _collectedAbilitiesForHUD.Count > 0 && _currentAbilityIndex < _collectedAbilitiesForHUD.Count)
+        {
+            string abilityToUse = _collectedAbilitiesForHUD[_currentAbilityIndex];
+
+            if (_powerUpSystem != null && _powerUpSystem.GetPowerUpCount(abilityToUse) > 0)
+            {
+                Debug.Log($"Attempting to use ability: {abilityToUse}");
+
+                if (abilityToUse == "Rocket")
+                {
+                    _powerUpSystem.ActivateRocket();
+                }
+                else if (abilityToUse == "Power Jump")
+                {
+                    _powerUpSystem.ActivatePowerJump();
+                }
+                else if (abilityToUse == "Invisibility")
+                {
+                    _powerUpSystem.ActivateInvisibility();
+                }
+                else if (abilityToUse == "Power")
+                {
+                    _powerUpSystem.ActivatePowerBoost();
+                }
+            }
+            else
+            {
+                Debug.Log($"No {abilityToUse} available to use.");
+                int indexToRemove = _collectedAbilitiesForHUD.IndexOf(abilityToUse);
+                if (indexToRemove != -1)
+                {
+                    _collectedAbilitiesForHUD.RemoveAt(indexToRemove);
+                    if (_collectedAbilitiesForHUD.Count == 0)
+                    {
+                        _currentAbilityIndex = -1;
+                    }
+                    else if (_currentAbilityIndex >= _collectedAbilitiesForHUD.Count)
+                    {
+                        _currentAbilityIndex = _collectedAbilitiesForHUD.Count - 1;
+                    }
+                }
+                else if (_collectedAbilitiesForHUD.Count > 0 && _currentAbilityIndex >= _collectedAbilitiesForHUD.Count)
+                {
+                    _currentAbilityIndex = _collectedAbilitiesForHUD.Count - 1;
+                }
+                else if (_collectedAbilitiesForHUD.Count == 0)
+                {
+                    _currentAbilityIndex = -1;
+                }
+                UpdateHUDAbilityDisplay();
+            }
+        }
+    }
+
+    void SelectPreviousAbility()
+    {
+        if (_collectedAbilitiesForHUD.Count > 0)
+        {
+            _currentAbilityIndex--;
+            if (_currentAbilityIndex < 0)
+            {
+                _currentAbilityIndex = _collectedAbilitiesForHUD.Count - 1;
+            }
+            UpdateHUDAbilityDisplay();
+        }
+    }
+    void SelectNextAbility()
+    {
+        if (_collectedAbilitiesForHUD.Count > 0)
+        {
+            _currentAbilityIndex++;
+            if (_currentAbilityIndex >= _collectedAbilitiesForHUD.Count)
+            {
+                _currentAbilityIndex = 0;
+            }
+            UpdateHUDAbilityDisplay();
+        }
+    }
+
+    void UpdateHUDAbilityDisplay()
+    {
+        if (_hudController != null && _collectedAbilitiesForHUD.Count > 0 && _currentAbilityIndex != -1 && _currentAbilityIndex < _collectedAbilitiesForHUD.Count && _powerUpSystem != null)
+        {
+            string currentAbilityName = _collectedAbilitiesForHUD[_currentAbilityIndex];
+            int currentAbilityCount = _powerUpSystem.GetPowerUpCount(currentAbilityName);
+            _hudController.UpdateAbilityDisplay(currentAbilityName, currentAbilityCount);
+        }
+        else if (_hudController != null)
+        {
+            _hudController.ClearAbilityDisplay();
+        }
+    }
+
+    public int GetCurrentAbilityIndex()
+    {
+        return _currentAbilityIndex;
+    }
+
+    public string[] GetAvailableAbilities()
+    {
+        return _availableAbilities;
     }
 }

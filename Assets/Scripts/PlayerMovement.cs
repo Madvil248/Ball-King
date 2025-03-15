@@ -39,7 +39,7 @@ public class PlayerMovement : MonoBehaviour
             Debug.LogError("Focal Point not found! Make sure your Focal Point GameObject is tagged 'FocalPoint'.");
         }
 
-        if (_rotateCamera == null) // ADD THIS CHECK - Verify RotateCamera is found
+        if (_rotateCamera == null)
         {
             Debug.LogError("RotateCamera component not found on Main Camera!");
         }
@@ -125,14 +125,14 @@ public class PlayerMovement : MonoBehaviour
             if (useCameraRelativeMovement)
             {
                 //Camera-Relative Movement
-                _rotateCamera.cameraRotationEnabled = true; // ENABLE camera rotation
+                _rotateCamera.cameraRotationEnabled = true;
                 movementDirection += _focalPoint.transform.forward * forwardInput;
                 _playerRb.AddForce(movementDirection * _speed);
             }
             else
             {
                 //Direct Input Movement (Camera-Relative Direction)
-                _rotateCamera.cameraRotationEnabled = false; // Keep camera rotation disabled in Direct Input
+                _rotateCamera.cameraRotationEnabled = false;
 
                 Transform cameraTransform = Camera.main.transform;
                 Vector3 cameraForward = cameraTransform.forward;

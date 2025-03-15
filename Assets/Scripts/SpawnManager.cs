@@ -1,10 +1,6 @@
-using System.Collections;
-using System.Collections.Generic;
-using TMPro;
-using Unity.VisualScripting;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 public class SpawnManager : MonoBehaviour
 {
@@ -24,16 +20,10 @@ public class SpawnManager : MonoBehaviour
     [SerializeField] private GameObject _powerJumpPowerUpPrefab;
     [SerializeField] private GameObject _invisibilityPowerUpPrefab;
     private GameObject[] powerUpPrefabs;
+    [SerializeField] private int _maxPowerUpsInScene = 4;
 
-    [Header("UI")]
-    [SerializeField] private TextMeshProUGUI _waveText;
-    [SerializeField] private float _waveTextDefaultSize = 60f;
-    [SerializeField] private float _waveTextBigSize = 120f;
-    [SerializeField] private float _waveTextAnimationDuration = 0.8f;
-
-    [Header("Score")]
-    [SerializeField] private TextMeshProUGUI _scoreText;
     private int _score = 0;
+    private GameHUDController _gameHUDController;
 
     public int WaveNumber
     {
@@ -46,12 +36,40 @@ public class SpawnManager : MonoBehaviour
         protected set { _score = value; }
     }
 
+    public string[] PowerUpPrefabNames
+    {
+        get
+        {
+            if (powerUpPrefabs != null)
+            {
+                string[] names = new string[powerUpPrefabs.Length];
+                for (int i = 0; i < powerUpPrefabs.Length; i++)
+                {
+                    if (powerUpPrefabs[i] != null)
+                    {
+                        names[i] = powerUpPrefabs[i].name.Replace("PowerUpPrefab", "");
+                    }
+                }
+                return names;
+            }
+            else
+            {
+                return new string[0];
+            }
+        }
+    }
+
     void Start()
     {
         powerUpPrefabs = new GameObject[] { _powerUpPrefab, _rocketPowerUpPrefab, _powerJumpPowerUpPrefab, _invisibilityPowerUpPrefab };
         _score = 0;
-        UpdateScoreUI();
         StartNewWave();
+
+        _gameHUDController = FindFirstObjectByType<GameHUDController>();
+        if (_gameHUDController == null)
+        {
+            Debug.LogError("GameHUDController not found in the scene!");
+        }
     }
 
     void Update()
@@ -69,26 +87,31 @@ public class SpawnManager : MonoBehaviour
         SpawnWave(_waveNumber);
         if (_waveNumber == 1)
         {
-            _waveText.text = "Wave " + _waveNumber;
-            _waveText.fontSize = _waveTextDefaultSize;
-            _waveText.gameObject.SetActive(true);
+            if (_gameHUDController != null)
+            {
+                _gameHUDController.AnnounceWave("Wave " + _waveNumber);
+            }
         }
         else if (_waveNumber % 10 == 0)
         {
-            StartCoroutine(AnimateWaveText("Boss Wave"));
+            if (_gameHUDController != null)
+            {
+                _gameHUDController.AnnounceWave("Boss Wave");
+            }
         }
         else
         {
-            StartCoroutine(AnimateWaveText("Wave: " + _waveNumber));
+            if (_gameHUDController != null)
+            {
+                _gameHUDController.AnnounceWave("Wave " + _waveNumber);
+            }
         }
-        // Every 2nd wave, spawn a power-up
         if (_waveNumber % 2 == 0)
         {
             SpawnPowerUp();
         }
     }
 
-    /// Dynamically determines how many enemies to spawn based on wave number.
     void SpawnWave(int waveNumber)
     {
         Debug.Log($">>> Wave {waveNumber}");
@@ -132,9 +155,21 @@ public class SpawnManager : MonoBehaviour
 
     private void SpawnPowerUp()
     {
-        Vector3 spawnPos = GenerateSpawnPosition();
-        int powerUpIndex = Random.Range(0, powerUpPrefabs.Length);
-        Instantiate(powerUpPrefabs[powerUpIndex], spawnPos, Quaternion.identity);
+        GameObject[] existingPowerUps = GameObject.FindGameObjectsWithTag("PowerBoostPowerUp")
+            .Concat(GameObject.FindGameObjectsWithTag("RocketPowerUp"))
+            .Concat(GameObject.FindGameObjectsWithTag("PowerJumpPowerUp"))
+            .Concat(GameObject.FindGameObjectsWithTag("InvisibilityPowerUp"))
+            .ToArray();
+        if(existingPowerUps.Length < _maxPowerUpsInScene)
+        {
+            Vector3 spawnPos = GenerateSpawnPosition();
+            int powerUpIndex = Random.Range(0, powerUpPrefabs.Length);
+            Instantiate(powerUpPrefabs[powerUpIndex], spawnPos, Quaternion.identity);
+        }
+        else
+        {
+            Debug.Log("Maximum number of power-ups reached (" + _maxPowerUpsInScene + "). Not spawning a new one.");
+        }
     }
 
     private Vector3 GenerateSpawnPosition()
@@ -144,46 +179,13 @@ public class SpawnManager : MonoBehaviour
         return new Vector3(spawnPosX, 0, spawnPosZ);
     }
 
-    IEnumerator AnimateWaveText(string waveText)
-    {
-        _waveText.text = waveText;
-
-        float timeElapsed = 0f;
-        float firstDuration = _waveTextAnimationDuration / 4f;
-        float secondDuration = _waveTextAnimationDuration - firstDuration;
-
-        _waveText.fontSize = _waveTextBigSize;
-
-        while (timeElapsed < firstDuration)
-        {
-            float t = timeElapsed / firstDuration;
-            float currentSize = Mathf.Lerp(_waveTextBigSize, 125f, t);
-            _waveText.fontSize = currentSize;
-
-            timeElapsed += Time.deltaTime;
-            yield return null;
-        }
-
-        while (timeElapsed < secondDuration)
-        {
-            float t = timeElapsed / secondDuration;
-            float currentSize = Mathf.Lerp(125f, _waveTextDefaultSize, t);
-            _waveText.fontSize = currentSize;
-
-            timeElapsed += Time.deltaTime;
-            yield return null;
-        }
-    }
-
-    public void UpdateScoreUI()
-    {
-        _scoreText.text = "Score " + _score.ToString();
-    }
-
     public void IncreaseScore(int amount)
     {
         Score += amount;
-        UpdateScoreUI();
+        if (_gameHUDController != null)
+        {
+            _gameHUDController.UpdateScore(Score);
+        }
     }
 
     public void GameOver()
