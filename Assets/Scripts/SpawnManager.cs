@@ -160,7 +160,7 @@ public class SpawnManager : MonoBehaviour
             .Concat(GameObject.FindGameObjectsWithTag("PowerJumpPowerUp"))
             .Concat(GameObject.FindGameObjectsWithTag("InvisibilityPowerUp"))
             .ToArray();
-        if(existingPowerUps.Length < _maxPowerUpsInScene)
+        if (existingPowerUps.Length < _maxPowerUpsInScene)
         {
             Vector3 spawnPos = GenerateSpawnPosition();
             int powerUpIndex = Random.Range(0, powerUpPrefabs.Length);

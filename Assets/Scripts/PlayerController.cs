@@ -55,6 +55,7 @@ public class PlayerController : MonoBehaviour
             if (_powerUpSystem != null)
             {
                 _powerUpSystem.UpdatePowerBoostIndicatorPosition(transform.position);
+                _powerUpSystem.UpdatePowerJumpIndicatorPosition(transform.position);
             }
         }
 
@@ -195,6 +196,36 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    public void AbilityExpired(string abilityName)
+    {
+        if (_collectedAbilitiesForHUD.Contains(abilityName))
+        {
+            if (_powerUpSystem != null && _powerUpSystem.GetPowerUpCount(abilityName) <= 0)
+            {
+                int indexToRemove = _collectedAbilitiesForHUD.IndexOf(abilityName);
+                _collectedAbilitiesForHUD.RemoveAt(indexToRemove);
+
+                if (_collectedAbilitiesForHUD.Count == 0)
+                {
+                    _currentAbilityIndex = -1;
+                }
+                else if (_currentAbilityIndex >= _collectedAbilitiesForHUD.Count)
+                {
+                    _currentAbilityIndex = _collectedAbilitiesForHUD.Count - 1;
+                }
+                else if (indexToRemove <= _currentAbilityIndex && _currentAbilityIndex > 0)
+                {
+                    _currentAbilityIndex--;
+                }
+                else if (_currentAbilityIndex >= _collectedAbilitiesForHUD.Count)
+                {
+                    _currentAbilityIndex = 0;
+                }
+            }
+        }
+        UpdateHUDAbilityDisplay();
+    }
+
     void SelectPreviousAbility()
     {
         if (_collectedAbilitiesForHUD.Count > 0)
@@ -220,7 +251,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    void UpdateHUDAbilityDisplay()
+    public void UpdateHUDAbilityDisplay()
     {
         if (_hudController != null && _collectedAbilitiesForHUD.Count > 0 && _currentAbilityIndex != -1 && _currentAbilityIndex < _collectedAbilitiesForHUD.Count && _powerUpSystem != null)
         {

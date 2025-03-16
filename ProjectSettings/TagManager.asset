@@ -13,7 +13,8 @@ TagManager:
   - Rocket
   - InvisibilityPowerUp
   - PowerBoostPowerUp
-  - PowerBoost Indicator
+  - PowerBoostIndicator
+  - PowerJumpIndicator
   layers:
   - Default
   - TransparentFX

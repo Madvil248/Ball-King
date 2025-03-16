@@ -6,14 +6,15 @@ using UnityEngine;
 public class PowerUpSystem : MonoBehaviour
 {
     private PlayerMovement _playerMovement;
-    private bool _isPowerBoostActive = false;
-    private Vector3 _powerBoostIndicatorOffset = new Vector3(0, -0.5f, 0);
     private Dictionary<string, int> _powerUpInventory = new Dictionary<string, int>();
+    private PlayerController _playerController;
 
     [Header("Power Powerup")]
     [SerializeField] private float _powerBoostStrength = 15.0f;
     [SerializeField] private float _powerUpDuration = 7f;
     [SerializeField] private GameObject _powerBoostIndicator;
+    private bool _isPowerBoostActive = false;
+    private Vector3 _powerBoostIndicatorOffset = new Vector3(0, -0.5f, 0);
 
     [Header("Rocket Powerup")]
     [SerializeField] private GameObject _rocketPrefab;
@@ -21,6 +22,8 @@ public class PowerUpSystem : MonoBehaviour
 
     [Header("Power Jump Powerup")]
     [SerializeField] private float _powerJumpDuration = 30f;
+    [SerializeField] private GameObject _powerJumpIndicator;
+    private Vector3 _powerJumpIndicatorOffset = new Vector3(0, -0.5f, 0);
     private bool _isPowerJumpPowerUpActive = false;
 
     [Header("Invisibility Powerup")]
@@ -39,7 +42,7 @@ public class PowerUpSystem : MonoBehaviour
         private set { _isPowerBoostActive = value; }
     }
 
-    public GameObject PowerUpIndicator
+    public GameObject PowerBoostIndicator
     {
         get { return _powerBoostIndicator; }
         private set { _powerBoostIndicator = value; }
@@ -57,6 +60,11 @@ public class PowerUpSystem : MonoBehaviour
         if (_playerMovement == null)
         {
             Debug.LogError("PlayerMovement component not found on PowerUpSystem! Ensure PowerUpSystem and PlayerMovement are on the same GameObject.");
+        }
+        _playerController = GetComponent<PlayerController>();
+        if (_playerController == null)
+        {
+            Debug.LogError("PlayerController component not found on PowerUpSystem!");
         }
 
         if (_powerBoostIndicator != null)
@@ -115,10 +123,15 @@ public class PowerUpSystem : MonoBehaviour
         {
             _powerUpInventory["Power"]--;
             _isPowerBoostActive = true;
+            UpdatePowerBoostIndicatorPosition(transform.position);
             Debug.Log("Power Boost Activated!");
             if (_powerBoostIndicator != null)
             {
-                PowerUpIndicator.gameObject.SetActive(true);
+                PowerBoostIndicator.gameObject.SetActive(true);
+            }
+            if (_playerController != null)
+            {
+                _playerController.AbilityExpired("Power");
             }
             StartCoroutine(PowerBoostCountdownRoutine());
             if (GetComponent<Renderer>() != null)
@@ -143,11 +156,15 @@ public class PowerUpSystem : MonoBehaviour
 
         if (_powerBoostIndicator != null)
         {
-            PowerUpIndicator.gameObject.SetActive(false);
+            PowerBoostIndicator.gameObject.SetActive(false);
         }
         if (GetComponent<Renderer>() != null)
         {
             GetComponent<Renderer>().material.color = _originalColor;
+        }
+        if (_playerController != null)
+        {
+            _playerController.AbilityExpired("Power");
         }
     }
 
@@ -165,7 +182,7 @@ public class PowerUpSystem : MonoBehaviour
         if (_isPowerBoostActive && _powerBoostIndicator != null)
         {
             Vector3 indicatorPosition = playerPosition + _powerBoostIndicatorOffset;
-            PowerUpIndicator.transform.position = indicatorPosition;
+            PowerBoostIndicator.transform.position = indicatorPosition;
         }
     }
 
@@ -173,7 +190,6 @@ public class PowerUpSystem : MonoBehaviour
     {
         if (_powerUpInventory.ContainsKey("Rocket") && _powerUpInventory["Rocket"] > 0)
         {
-            _powerUpInventory["Rocket"]--;
             LaunchRocket();
         }
         else
@@ -194,6 +210,11 @@ public class PowerUpSystem : MonoBehaviour
 
         if (targetEnemy != null)
         {
+            _powerUpInventory["Rocket"]--;
+            if (_playerController != null)
+            {
+                _playerController.AbilityExpired("Rocket");
+            }
             Debug.Log("Rocket Launched! Target Acquired: " + targetEnemy.name);
             GameObject rocketInstance = Instantiate(_rocketPrefab, _rocketSpawnPoint.position, _rocketSpawnPoint.rotation);
             RocketProjectile rocketProjectile = rocketInstance.GetComponent<RocketProjectile>();
@@ -216,12 +237,21 @@ public class PowerUpSystem : MonoBehaviour
 
     public void ActivatePowerJump()
     {
-        if (_powerUpInventory.ContainsKey("Power Jump") && _powerUpInventory["Power Jump"] > 0 && _isPowerJumpPowerUpActive)
+        if (_powerUpInventory.ContainsKey("Power Jump") && _powerUpInventory["Power Jump"] > 0 && !_isPowerJumpPowerUpActive)
         {
             _powerUpInventory["Power Jump"]--;
             _isPowerJumpPowerUpActive = true;
             _playerMovement.IsPowerJumpActive = true;
             Debug.Log("Power Jump Activated!");
+            if (_playerController != null)
+            {
+                _playerController.AbilityExpired("Power Jump");
+            }
+            if (_powerJumpIndicator != null)
+            {
+                _powerJumpIndicator.gameObject.SetActive(true);
+                UpdatePowerJumpIndicatorPosition(transform.position);
+            }
             StartCoroutine(PowerJumpPowerUpCountdownRoutine());
         }
         else if (_isPowerJumpPowerUpActive)
@@ -237,10 +267,22 @@ public class PowerUpSystem : MonoBehaviour
     private IEnumerator PowerJumpPowerUpCountdownRoutine()
     {
         yield return new WaitForSeconds(_powerJumpDuration);
-
         _isPowerJumpPowerUpActive = false;
         _playerMovement.IsPowerJumpActive = false;
         Debug.Log("Power Jump PowerUp Expired.");
+        if (_powerJumpIndicator != null)
+        {
+            _powerJumpIndicator.gameObject.SetActive(false);
+        }
+    }
+
+    public void UpdatePowerJumpIndicatorPosition(Vector3 playerPosition)
+    {
+        if (_isPowerJumpPowerUpActive && _powerJumpIndicator != null)
+        {
+            Vector3 indicatorPosition = new Vector3(playerPosition.x, 0, playerPosition.z) + _powerJumpIndicatorOffset;
+            _powerJumpIndicator.transform.position = indicatorPosition;
+        }
     }
 
     public void ActivateInvisibility()
@@ -249,6 +291,10 @@ public class PowerUpSystem : MonoBehaviour
         {
             _powerUpInventory["Invisibility"]--;
             _hasInvisibilityPowerUp = true;
+            if (_playerController != null)
+            {
+                _playerController.AbilityExpired("Invisibility");
+            }
             StartCoroutine(InvisibilityPowerUpCountdownRoutine());
         }
         else if (_hasInvisibilityPowerUp)
@@ -267,7 +313,7 @@ public class PowerUpSystem : MonoBehaviour
         if (_playerRenderer != null)
         {
             Color transparentColor = _originalColor;
-            transparentColor.a = 0.6f;
+            transparentColor.a = 0.4f;
             _playerRenderer.material.color = transparentColor;
 
             int invisibilityLayer = LayerMask.NameToLayer(_invisibilityLayerName);
@@ -299,10 +345,19 @@ public class PowerUpSystem : MonoBehaviour
         if (enemies.Length > 0)
         {
             EnemyBase[] validEnemies = enemies.Where(enemy => enemy != null && enemy.gameObject != null).ToArray();
-            if (validEnemies.Length > 0)
+            List<EnemyBase> validEnemiesList = new List<EnemyBase>();
+            foreach (EnemyBase enemy in validEnemies)
             {
-                int randomIndex = Random.Range(0, validEnemies.Length);
-                return validEnemies[randomIndex].transform;
+                if (enemy.transform.position.x <= 9f && enemy.transform.position.x >= -9f &&
+                enemy.transform.position.y <= 9f && enemy.transform.position.y >= -9f)
+                {
+                    validEnemiesList.Add(enemy);
+                }
+            }
+            if (validEnemiesList.Count > 0)
+            {
+                int randomIndex = Random.Range(0, validEnemiesList.Count);
+                return validEnemiesList[randomIndex].transform;
             }
         }
         return null;

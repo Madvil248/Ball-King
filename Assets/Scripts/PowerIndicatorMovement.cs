@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class PowerIndicatorMovement : MonoBehaviour
 {
-    private float rotationSpeed = 100.0f;
+    [SerializeField] private float rotationSpeed = 100.0f;
     void Start()
     {
 

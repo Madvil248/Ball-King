@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class RocketProjectile : MonoBehaviour
 {
-    [SerializeField] private float _speed = 15f;
+    [SerializeField] private float _speed = 30f;
     [SerializeField] private float _explosionRadius = 5f;
     [SerializeField] private float _explosionForce = 700f;
     [SerializeField] private GameObject _explosionEffectPrefab;
