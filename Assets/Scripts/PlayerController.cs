@@ -11,6 +11,10 @@ public class PlayerController : MonoBehaviour
     private List<string> _collectedAbilitiesForHUD = new List<string>();
     private int _currentAbilityIndex = -1;
 
+    [Header("Power Up Effects")]
+    [SerializeField] private AudioClip _powerUpSound;
+    private AudioSource _audioSource;
+
     void Start()
     {
         _playerMovement = GetComponent<PlayerMovement>();
@@ -42,6 +46,12 @@ public class PlayerController : MonoBehaviour
             _availableAbilities = new string[0];
         }
         UpdateHUDAbilityDisplay();
+
+        _audioSource = GetComponent<AudioSource>();
+        if (_audioSource == null)
+        {
+            _audioSource = gameObject.AddComponent<AudioSource>();
+        }
     }
 
     void Update()
@@ -98,6 +108,8 @@ public class PlayerController : MonoBehaviour
 
         if (!string.IsNullOrEmpty(collectedAbilityName))
         {
+            _audioSource.PlayOneShot(_powerUpSound, 0.75f);
+
             if (_powerUpSystem != null)
             {
                 _powerUpSystem.PowerUpCollected(collectedAbilityName);
@@ -114,6 +126,7 @@ public class PlayerController : MonoBehaviour
                     }
                 }
                 UpdateHUDAbilityDisplay();
+                _hudController.DisplayAbilityHelper(_collectedAbilitiesForHUD.Count);
             }
             Destroy(other.gameObject);
         }

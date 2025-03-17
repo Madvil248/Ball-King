@@ -17,6 +17,12 @@ public class GameOverUIController : MonoBehaviour
     [SerializeField] private Button _restartButton;
     [SerializeField] private Button _mainMenuButton;
 
+    [Header("Sound Effects")]
+    [SerializeField] private AudioClip _buttonClick;
+    [SerializeField] private AudioClip _backgroundMusic;
+    [SerializeField] private float _backgroundMusicStartTime = 60f;
+    private AudioSource _audioSource;
+
     private int _finalScore;
 
     void Start()
@@ -24,6 +30,14 @@ public class GameOverUIController : MonoBehaviour
         _finalScore = GameOverData.FinalScore;
         SetFinalScore(_finalScore);
         Debug.Log("Game Over Scene Loaded. Final Score: " + _finalScore);
+
+        _audioSource = GetComponent<AudioSource>();
+        if (_audioSource == null)
+        {
+            _audioSource = gameObject.AddComponent<AudioSource>();
+        }
+
+        PlayBackgroundMusic();
     }
 
     void Update()
@@ -38,6 +52,7 @@ public class GameOverUIController : MonoBehaviour
 
     public void OnSubmitScoreButtonClicked()
     {
+        PlaySoundButtonClick();
         string playerName = _nameInputField.text;
         Debug.Log("Score Submitted! Player Name: " + playerName + ", Score: " + /* we'll get the score later */ "...");
 
@@ -67,12 +82,14 @@ public class GameOverUIController : MonoBehaviour
 
     public void OnRestartButtonClicked()
     {
+        PlaySoundButtonClick();
         SceneManager.LoadScene("GameMain");
         Debug.Log("Restart Button Clicked!");
     }
 
     public void OnMainMenuButtonClicked()
     {
+        PlaySoundButtonClick();
         SceneManager.LoadScene("MainMenuScene");
         Debug.Log("Main Menu Button Clicked!");
     }
@@ -99,5 +116,21 @@ public class GameOverUIController : MonoBehaviour
             _topHighScoresText.text = highScoresText;
         }
         _topHighScoresText.gameObject.SetActive(true);
+    }
+
+    void PlayBackgroundMusic()
+    {
+        _audioSource.clip = _backgroundMusic;
+        _audioSource.time = _backgroundMusicStartTime;
+        _audioSource.loop = true;
+        _audioSource.Play();
+    }
+
+    void PlaySoundButtonClick()
+    {
+        if (_audioSource != null)
+        {
+            _audioSource.PlayOneShot(_buttonClick);
+        }
     }
 }

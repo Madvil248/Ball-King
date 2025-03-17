@@ -12,6 +12,7 @@ public class SpawnManager : MonoBehaviour
     [SerializeField] private GameObject _normalEnemyPrefab;
     [SerializeField] private GameObject _hardEnemyPrefab;
     [SerializeField] private GameObject _bossEnemyPrefab;
+    private float _bossSpawnYOffset = 2.1f;
     private int _enemyCount;
 
     [Header("Power-Ups")]
@@ -129,7 +130,7 @@ public class SpawnManager : MonoBehaviour
         if (spawnBoss)
         {
             Debug.Log("BOSS APPEARS!");
-            SpawnEnemy(_bossEnemyPrefab);
+            SpawnEnemy(_bossEnemyPrefab, _bossSpawnYOffset);
         }
 
         //Spawn calculated number of each enemy type
@@ -138,19 +139,18 @@ public class SpawnManager : MonoBehaviour
         SpawnEnemies(hardCount, _hardEnemyPrefab, "Hard");
     }
 
-    /// Spawns a specified number of enemies of a given type.
     private void SpawnEnemies(int count, GameObject prefabToSpawn, string enemyTypeName)
     {
         for (int i = 0; i < count; i++)
         {
-            SpawnEnemy(prefabToSpawn);
+            SpawnEnemy(prefabToSpawn, 0f);
         }
     }
 
 
-    private void SpawnEnemy(GameObject prefabToSpawn)
+    private void SpawnEnemy(GameObject prefabToSpawn, float yOffset)
     {
-        Instantiate(prefabToSpawn, GenerateSpawnPosition(), prefabToSpawn.transform.rotation);
+        Instantiate(prefabToSpawn, GenerateSpawnPosition(yOffset), prefabToSpawn.transform.rotation);
     }
 
     private void SpawnPowerUp()
@@ -162,8 +162,9 @@ public class SpawnManager : MonoBehaviour
             .ToArray();
         if (existingPowerUps.Length < _maxPowerUpsInScene)
         {
-            Vector3 spawnPos = GenerateSpawnPosition();
+            Vector3 spawnPos = GenerateSpawnPosition(0f);
             int powerUpIndex = Random.Range(0, powerUpPrefabs.Length);
+            //int powerUpIndex = 1;
             Instantiate(powerUpPrefabs[powerUpIndex], spawnPos, Quaternion.identity);
         }
         else
@@ -172,11 +173,11 @@ public class SpawnManager : MonoBehaviour
         }
     }
 
-    private Vector3 GenerateSpawnPosition()
+    private Vector3 GenerateSpawnPosition(float yOffset)
     {
         float spawnPosX = Random.Range(-_spawnRange, _spawnRange);
         float spawnPosZ = Random.Range(-_spawnRange, _spawnRange);
-        return new Vector3(spawnPosX, 0, spawnPosZ);
+        return new Vector3(spawnPosX, yOffset, spawnPosZ);
     }
 
     public void IncreaseScore(int amount)

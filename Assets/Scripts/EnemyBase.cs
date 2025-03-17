@@ -10,6 +10,10 @@ public class EnemyBase : MonoBehaviour
     [Header("Score")]
     [SerializeField] private int _scoreValue = 10;
 
+    [Header("Audio")]
+    [SerializeField] private AudioClip _collisionSound;
+    private AudioSource _audioSource;
+
     public float Speed
     {
         get { return _speed; }
@@ -21,6 +25,7 @@ public class EnemyBase : MonoBehaviour
         get { return _pushResistance; }
         set { _pushResistance = value; }
     }
+
     protected virtual void Awake()
     {
         _enemyRb = GetComponent<Rigidbody>();
@@ -29,6 +34,17 @@ public class EnemyBase : MonoBehaviour
         {
             Debug.LogError("Player GameObject not found! Make sure your Player GameObject is tagged 'Player'.");
         }
+
+        _audioSource = GetComponent<AudioSource>();
+        if (_audioSource == null)
+        {
+            _audioSource = gameObject.AddComponent<AudioSource>();
+        }
+    }
+
+    void Update()
+    {
+        EnemyUpdate();
     }
 
     public virtual void MoveTowardsPlayer()
@@ -50,12 +66,6 @@ public class EnemyBase : MonoBehaviour
         }
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        EnemyUpdate();
-    }
-
     protected virtual void Die()
     {
         Debug.Log("EnemyBase Died!");
@@ -65,5 +75,17 @@ public class EnemyBase : MonoBehaviour
             spawnManager.IncreaseScore(_scoreValue);
         }
         Destroy(gameObject);
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if ((collision.gameObject.CompareTag("Player") || collision.gameObject.CompareTag("Enemy")) && _collisionSound != null)
+        {
+            if (_audioSource == null)
+            {
+                _audioSource = gameObject.AddComponent<AudioSource>();
+            }
+            _audioSource.PlayOneShot(_collisionSound, 0.5f);
+        }
     }
 }

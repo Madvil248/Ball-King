@@ -4,15 +4,14 @@ public class PlayerMovement : MonoBehaviour
 {
     [SerializeField] private float _speed = 5.0f;
     public bool useCameraRelativeMovement = false;
+    private PowerUpSystem _powerUpSystem;
     private Rigidbody _playerRb;
     private GameObject _focalPoint;
     private RotateCamera _rotateCamera;
 
     [Header("Jump Settings")]
-    [SerializeField] private float _jumpForce = 8.0f;
-    [SerializeField] private float _jumpExplosionRadius = 7f;
-    [SerializeField] private float _jumpExplosionForce = 500f;
-    [SerializeField] private float _groundCheckDistance = 0.8f;
+    [SerializeField] private float _jumpForce = 25.0f;
+    [SerializeField] private float _groundCheckDistance = 1.2f;
     private bool _isPowerJumpActive = false;
     private bool _isGrounded = true;
 
@@ -31,17 +30,23 @@ public class PlayerMovement : MonoBehaviour
     private void Awake()
     {
         _playerRb = GetComponent<Rigidbody>();
-        _focalPoint = GameObject.FindGameObjectWithTag("FocalPoint");
-        _rotateCamera = _focalPoint.GetComponent<RotateCamera>();
 
+        _focalPoint = GameObject.FindGameObjectWithTag("FocalPoint");
         if (_focalPoint == null)
         {
             Debug.LogError("Focal Point not found! Make sure your Focal Point GameObject is tagged 'FocalPoint'.");
         }
 
+        _rotateCamera = _focalPoint.GetComponent<RotateCamera>();
         if (_rotateCamera == null)
         {
             Debug.LogError("RotateCamera component not found on Main Camera!");
+        }
+
+        _powerUpSystem = GetComponent<PowerUpSystem>();
+        if (_powerUpSystem == null)
+        {
+            Debug.LogError("PowerUpSystem component not found on PlayerController!");
         }
     }
 
@@ -73,6 +78,10 @@ public class PlayerMovement : MonoBehaviour
         {
             _playerRb.AddForce(Vector3.up * _jumpForce, ForceMode.Impulse);
             _isGrounded = false;
+            if (_powerUpSystem != null)
+            {
+                _powerUpSystem.PlayPowerJumpAudioEffect();
+            }
         }
     }
 
@@ -89,30 +98,6 @@ public class PlayerMovement : MonoBehaviour
         else
         {
             _isGrounded = false;
-        }
-    }
-
-    private void OnCollisionEnter(Collision collision)
-    {
-        if (!_isGrounded && _isPowerJumpActive)
-        {
-            ExplosionOnLand();
-            _isGrounded = true;
-        }
-    }
-
-    private void ExplosionOnLand()
-    {
-        Debug.Log("Power Jump Landing Explosion!");
-        Collider[] colliders = Physics.OverlapSphere(transform.position, _jumpExplosionRadius);
-
-        foreach (Collider nearbyObject in colliders)
-        {
-            Rigidbody rb = nearbyObject.GetComponent<Rigidbody>();
-            if (rb != null && nearbyObject.CompareTag("Enemy"))
-            {
-                rb.AddExplosionForce(_jumpExplosionForce, transform.position, _jumpExplosionRadius, 0f, ForceMode.Impulse);
-            }
         }
     }
 

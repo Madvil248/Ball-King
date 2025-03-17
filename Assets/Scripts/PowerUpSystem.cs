@@ -8,27 +8,35 @@ public class PowerUpSystem : MonoBehaviour
     private PlayerMovement _playerMovement;
     private Dictionary<string, int> _powerUpInventory = new Dictionary<string, int>();
     private PlayerController _playerController;
+    private AudioSource _audioSource;
 
     [Header("Power Powerup")]
     [SerializeField] private float _powerBoostStrength = 15.0f;
-    [SerializeField] private float _powerUpDuration = 7f;
+    [SerializeField] private float _powerBoostDuration = 15f;
     [SerializeField] private GameObject _powerBoostIndicator;
+    [SerializeField] private AudioClip _powerBoostAudioEffect;
     private bool _isPowerBoostActive = false;
     private Vector3 _powerBoostIndicatorOffset = new Vector3(0, -0.5f, 0);
+    public float PowerBoostRemainingTime { get; private set; }
 
     [Header("Rocket Powerup")]
     [SerializeField] private GameObject _rocketPrefab;
     [SerializeField] private Transform _rocketSpawnPoint;
 
     [Header("Power Jump Powerup")]
-    [SerializeField] private float _powerJumpDuration = 30f;
+    [SerializeField] private float _powerJumpDuration = 20f;
     [SerializeField] private GameObject _powerJumpIndicator;
+    [SerializeField] private AudioClip _powerJumpAudioEffect;
     private Vector3 _powerJumpIndicatorOffset = new Vector3(0, -0.5f, 0);
     private bool _isPowerJumpPowerUpActive = false;
+    public float PowerJumpRemainingTime { get; private set; }
 
     [Header("Invisibility Powerup")]
-    [SerializeField] private float _invisibilityDuration = 20f;
-    private bool _hasInvisibilityPowerUp = false;
+    [SerializeField] private float _invisibilityDuration = 10f;
+    [SerializeField] private Material _transparentPlayerMaterial;
+    private Material _originalPlayerMaterial;
+    private bool _isInvisibilityPowerUpActive = false;
+    public float InvisibilityRemainingTime { get; private set; }
 
     [Header("Visual Effects")]
     [SerializeField] private Renderer _playerRenderer;
@@ -36,10 +44,16 @@ public class PowerUpSystem : MonoBehaviour
     private int _originalLayer;
     [SerializeField] private string _invisibilityLayerName = "InvisiblePlayer";
 
-    public bool HasPowerPowerUp
+    public bool HasPowerBoost
     {
         get { return _isPowerBoostActive; }
         private set { _isPowerBoostActive = value; }
+    }
+
+    public float PowerBoostDuration
+    {
+        get { return _powerBoostDuration; }
+        private set { _powerBoostDuration = value; }
     }
 
     public GameObject PowerBoostIndicator
@@ -52,6 +66,26 @@ public class PowerUpSystem : MonoBehaviour
     {
         get { return _powerBoostStrength; }
         private set { _powerBoostStrength = value; }
+    }
+
+    public bool PowerJumpPowerUpActive
+    {
+        get { return _isPowerJumpPowerUpActive; }
+    }
+
+    public float PowerJumpDuration
+    {
+        get { return _powerJumpDuration; }
+    }
+
+    public bool InvisibilityPowerUpActive
+    {
+        get { return _isInvisibilityPowerUpActive; }
+    }
+
+    public float InvisibilityPowerUpDuration
+    {
+        get { return _invisibilityDuration; }
     }
 
     void Start()
@@ -84,12 +118,19 @@ public class PowerUpSystem : MonoBehaviour
 
         if (_playerRenderer != null)
         {
-            _originalColor = _playerRenderer.material.color;
             _originalLayer = gameObject.layer;
+            _originalColor = _playerRenderer.material.color;
+            _originalPlayerMaterial = _playerRenderer.material;
         }
         else
         {
             Debug.LogError("Player Renderer is not assigned in PowerUpSystem!");
+        }
+
+        _audioSource = GetComponent<AudioSource>();
+        if (_audioSource == null)
+        {
+            _audioSource = gameObject.AddComponent<AudioSource>();
         }
     }
 
@@ -119,6 +160,7 @@ public class PowerUpSystem : MonoBehaviour
 
     public void ActivatePowerBoost()
     {
+        Debug.Log(">>> ActivatePowerBoost()");
         if (_powerUpInventory.ContainsKey("Power") && _powerUpInventory["Power"] > 0 && !_isPowerBoostActive)
         {
             _powerUpInventory["Power"]--;
@@ -151,8 +193,15 @@ public class PowerUpSystem : MonoBehaviour
 
     private IEnumerator PowerBoostCountdownRoutine()
     {
-        yield return new WaitForSeconds(_powerUpDuration);
-        HasPowerPowerUp = false;
+        float timer = _powerBoostDuration;
+        PowerBoostRemainingTime = timer;
+        while (timer > 0)
+        {
+            yield return null;
+            timer -= Time.deltaTime;
+            PowerBoostRemainingTime = timer;
+        }
+        HasPowerBoost = false;
 
         if (_powerBoostIndicator != null)
         {
@@ -166,6 +215,7 @@ public class PowerUpSystem : MonoBehaviour
         {
             _playerController.AbilityExpired("Power");
         }
+        PowerBoostRemainingTime = 0f;
     }
 
     public void ApplyPowerBoostEffect(Rigidbody enemyRb, Vector3 playerPosition)
@@ -174,6 +224,7 @@ public class PowerUpSystem : MonoBehaviour
         {
             Vector3 awayFromPlayer = enemyRb.transform.position - playerPosition;
             enemyRb.AddForce(awayFromPlayer * PowerBoostStrength, ForceMode.Impulse);
+            PlayOneShotSound(_powerBoostAudioEffect);
         }
     }
 
@@ -266,7 +317,14 @@ public class PowerUpSystem : MonoBehaviour
 
     private IEnumerator PowerJumpPowerUpCountdownRoutine()
     {
-        yield return new WaitForSeconds(_powerJumpDuration);
+        float timer = _powerJumpDuration;
+        PowerJumpRemainingTime = timer;
+        while (timer > 0)
+        {
+            yield return null;
+            timer -= Time.deltaTime;
+            PowerJumpRemainingTime = timer;
+        }
         _isPowerJumpPowerUpActive = false;
         _playerMovement.IsPowerJumpActive = false;
         Debug.Log("Power Jump PowerUp Expired.");
@@ -274,6 +332,12 @@ public class PowerUpSystem : MonoBehaviour
         {
             _powerJumpIndicator.gameObject.SetActive(false);
         }
+        PowerJumpRemainingTime = 0f;
+    }
+
+    public void PlayPowerJumpAudioEffect()
+    {
+        PlayOneShotSound(_powerJumpAudioEffect);
     }
 
     public void UpdatePowerJumpIndicatorPosition(Vector3 playerPosition)
@@ -287,17 +351,17 @@ public class PowerUpSystem : MonoBehaviour
 
     public void ActivateInvisibility()
     {
-        if (_powerUpInventory.ContainsKey("Invisibility") && _powerUpInventory["Invisibility"] > 0 && !_hasInvisibilityPowerUp)
+        if (_powerUpInventory.ContainsKey("Invisibility") && _powerUpInventory["Invisibility"] > 0 && !_isInvisibilityPowerUpActive)
         {
             _powerUpInventory["Invisibility"]--;
-            _hasInvisibilityPowerUp = true;
+            _isInvisibilityPowerUpActive = true;
             if (_playerController != null)
             {
                 _playerController.AbilityExpired("Invisibility");
             }
             StartCoroutine(InvisibilityPowerUpCountdownRoutine());
         }
-        else if (_hasInvisibilityPowerUp)
+        else if (_isInvisibilityPowerUpActive)
         {
             Debug.Log("Invisibility is already active.");
         }
@@ -309,12 +373,9 @@ public class PowerUpSystem : MonoBehaviour
 
     private IEnumerator InvisibilityPowerUpCountdownRoutine()
     {
-        Debug.Log("Invisibility Activated!");
-        if (_playerRenderer != null)
+        if (_playerRenderer != null && _transparentPlayerMaterial != null)
         {
-            Color transparentColor = _originalColor;
-            transparentColor.a = 0.4f;
-            _playerRenderer.material.color = transparentColor;
+            _playerRenderer.material = _transparentPlayerMaterial;
 
             int invisibilityLayer = LayerMask.NameToLayer(_invisibilityLayerName);
             if (invisibilityLayer != -1)
@@ -326,17 +387,23 @@ public class PowerUpSystem : MonoBehaviour
                 Debug.LogError($"Layer '{_invisibilityLayerName}' not found! Make sure it exists in Layer settings.");
             }
         }
-        yield return new WaitForSeconds(_invisibilityDuration);
-        Debug.Log("Invisibility PowerUp Expired!");
+
+        float timer = _invisibilityDuration;
+        InvisibilityRemainingTime = timer;
+        while (timer > 0)
+        {
+            yield return null;
+            timer -= Time.deltaTime;
+            InvisibilityRemainingTime = timer;
+        }
+
         if (_playerRenderer != null)
         {
-            // Revert to Original Color
-            _playerRenderer.material.color = _originalColor;
-
-            // Revert to Original Layer
+            _playerRenderer.material = _originalPlayerMaterial;
             gameObject.layer = _originalLayer;
         }
-        _hasInvisibilityPowerUp = false;
+        _isInvisibilityPowerUpActive = false;
+        InvisibilityRemainingTime = 0f;
     }
 
     private Transform GetRandomEnemyTarget()
@@ -361,5 +428,13 @@ public class PowerUpSystem : MonoBehaviour
             }
         }
         return null;
+    }
+
+    void PlayOneShotSound(AudioClip clip)
+    {
+        if (_audioSource != null)
+        {
+            _audioSource.PlayOneShot(clip, 0.75f);
+        }
     }
 }

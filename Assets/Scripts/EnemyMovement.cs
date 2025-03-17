@@ -2,15 +2,9 @@ using UnityEngine;
 
 public class EnemyMovement : MonoBehaviour
 {
-    [SerializeField] private float _speed = 3.0f;
     private Rigidbody _enemyRb;
     private GameObject _player;
-
-    public float Speed
-    {
-        get { return _speed; }
-        set { _speed = value; }
-    }
+    private EnemyBase _enemyBase;
 
     private void Awake()
     {
@@ -27,7 +21,7 @@ public class EnemyMovement : MonoBehaviour
         if (_player != null)
         {
             Vector3 lookDirection = (_player.transform.position - transform.position).normalized;
-            _enemyRb.AddForce(lookDirection * _speed);
+            _enemyRb.AddForce(lookDirection * _enemyBase.Speed);
         }
     }
 }

@@ -22,12 +22,26 @@ public class MainMenuUIController : MonoBehaviour
     [SerializeField] private Button _backToMainMenuButton;
     [SerializeField] private TextMeshProUGUI _highScoresTitleText;
 
+    [Header("Background Music")]
+    [SerializeField] private AudioClip _backgroundMusic;
+    [SerializeField] private AudioClip _buttonClickSound;
+    private AudioSource _audioSource;
+
     private Vector2 _originalGameTitlePosition;
     private bool _originalPositionSaved = false;
 
     void Start()
     {
+        _audioSource = GetComponent<AudioSource>();
+        if (_audioSource == null)
+        {
+            _audioSource = gameObject.AddComponent<AudioSource>();
+        }
 
+        _audioSource.clip = _backgroundMusic;
+
+        _audioSource.loop = true;
+        _audioSource.Play();
     }
 
     void Update()
@@ -37,12 +51,20 @@ public class MainMenuUIController : MonoBehaviour
 
     public void OnPlayButtonClicked()
     {
+        if (_audioSource != null && _buttonClickSound != null)
+        {
+            _audioSource.PlayOneShot(_buttonClickSound);
+        }
         SceneManager.LoadScene("GameMain");
         Debug.Log("Play Button Clicked - Loading Game Scene!");
     }
 
     public void OnHighScoresButtonClicked()
     {
+        if (_audioSource != null && _buttonClickSound != null)
+        {
+            _audioSource.PlayOneShot(_buttonClickSound);
+        }
         Debug.Log("High Scores Button Clicked - (Functionality to be implemented later)");
 
         if (!_originalPositionSaved)
@@ -72,11 +94,19 @@ public class MainMenuUIController : MonoBehaviour
 
     public void OnOptionsButtonClicked()
     {
+        if (_audioSource != null && _buttonClickSound != null)
+        {
+            _audioSource.PlayOneShot(_buttonClickSound);
+        }
         Debug.Log("Options Button Clicked - (Functionality to be implemented later)");
     }
 
     public void OnQuitGameButtonClicked()
     {
+        if (_audioSource != null && _buttonClickSound != null)
+        {
+            _audioSource.PlayOneShot(_buttonClickSound);
+        }
         Debug.Log("Quit Game Button Clicked - Quitting Application");
 #if UNITY_EDITOR
         EditorApplication.ExitPlaymode();
@@ -87,6 +117,10 @@ public class MainMenuUIController : MonoBehaviour
 
     public void OnBackToMainMenuButtonClicked()
     {
+        if (_audioSource != null && _buttonClickSound != null)
+        {
+            _audioSource.PlayOneShot(_buttonClickSound);
+        }
         Debug.Log("Back to Main Menu Button Clicked - Hiding High Scores Panel.");
         _highScorePanel.gameObject.SetActive(false);
         SetMainMenuButtonsActive(true);
