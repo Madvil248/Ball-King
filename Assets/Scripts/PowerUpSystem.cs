@@ -344,7 +344,7 @@ public class PowerUpSystem : MonoBehaviour
     {
         if (_isPowerJumpPowerUpActive && _powerJumpIndicator != null)
         {
-            Vector3 indicatorPosition = new Vector3(playerPosition.x, 0, playerPosition.z) + _powerJumpIndicatorOffset;
+            Vector3 indicatorPosition = new Vector3(playerPosition.x, playerPosition.y > 0 ? 0 : playerPosition.y, playerPosition.z) + _powerJumpIndicatorOffset;
             _powerJumpIndicator.transform.position = indicatorPosition;
         }
     }

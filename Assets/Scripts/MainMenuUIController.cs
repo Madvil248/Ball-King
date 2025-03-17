@@ -1,10 +1,12 @@
-using NUnit.Framework;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using System.Collections.Generic;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 public class MainMenuUIController : MonoBehaviour
 {
@@ -21,6 +23,10 @@ public class MainMenuUIController : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _highScoreListText;
     [SerializeField] private Button _backToMainMenuButton;
     [SerializeField] private TextMeshProUGUI _highScoresTitleText;
+
+    [Header("Options Panel")]
+    [SerializeField] private GameObject _optionsPanel;
+    [SerializeField] private Button _backFromOptionsButton;
 
     [Header("Background Music")]
     [SerializeField] private AudioClip _backgroundMusic;
@@ -42,6 +48,15 @@ public class MainMenuUIController : MonoBehaviour
 
         _audioSource.loop = true;
         _audioSource.Play();
+
+        if (_optionsPanel != null)
+        {
+            _optionsPanel.SetActive(false);
+        }
+        else
+        {
+            Debug.LogError("Options Panel not assigned in MainMenuUIController!");
+        }
     }
 
     void Update()
@@ -56,7 +71,6 @@ public class MainMenuUIController : MonoBehaviour
             _audioSource.PlayOneShot(_buttonClickSound);
         }
         SceneManager.LoadScene("GameMain");
-        Debug.Log("Play Button Clicked - Loading Game Scene!");
     }
 
     public void OnHighScoresButtonClicked()
@@ -65,8 +79,6 @@ public class MainMenuUIController : MonoBehaviour
         {
             _audioSource.PlayOneShot(_buttonClickSound);
         }
-        Debug.Log("High Scores Button Clicked - (Functionality to be implemented later)");
-
         if (!_originalPositionSaved)
         {
             _originalGameTitlePosition = _gameTitleRectTransform.anchoredPosition;
@@ -98,7 +110,15 @@ public class MainMenuUIController : MonoBehaviour
         {
             _audioSource.PlayOneShot(_buttonClickSound);
         }
-        Debug.Log("Options Button Clicked - (Functionality to be implemented later)");
+        SetMainMenuButtonsActive(false);
+        if (_optionsPanel != null)
+        {
+            _optionsPanel.gameObject.SetActive(true);
+        }
+        else
+        {
+            Debug.LogError("Options Panel not assigned in MainMenuUIController!");
+        }
     }
 
     public void OnQuitGameButtonClicked()
@@ -107,7 +127,6 @@ public class MainMenuUIController : MonoBehaviour
         {
             _audioSource.PlayOneShot(_buttonClickSound);
         }
-        Debug.Log("Quit Game Button Clicked - Quitting Application");
 #if UNITY_EDITOR
         EditorApplication.ExitPlaymode();
 #else
@@ -121,11 +140,23 @@ public class MainMenuUIController : MonoBehaviour
         {
             _audioSource.PlayOneShot(_buttonClickSound);
         }
-        Debug.Log("Back to Main Menu Button Clicked - Hiding High Scores Panel.");
         _highScorePanel.gameObject.SetActive(false);
         SetMainMenuButtonsActive(true);
 
         _gameTitleRectTransform.anchoredPosition = _originalGameTitlePosition;
+    }
+
+    public void OnBackFromOptionsButtonClicked()
+    {
+        if (_audioSource != null && _buttonClickSound != null)
+        {
+            _audioSource.PlayOneShot(_buttonClickSound);
+        }
+        if (_optionsPanel != null)
+        {
+            _optionsPanel.gameObject.SetActive(false);
+        }
+        SetMainMenuButtonsActive(true);
     }
 
     private string FormatHighScores(List<HighScoreEntry> scores)
@@ -136,7 +167,7 @@ public class MainMenuUIController : MonoBehaviour
             for (int i = 0; i < scores.Count; i++)
             {
                 HighScoreEntry entry = scores[i];
-                formattedText += $"{i + 1} {entry.PlayerName} - {entry.Score}\n";
+                formattedText += $"{i + 1} {entry.PlayerName} {entry.Score}\n";
             }
         }
         else

@@ -3,7 +3,6 @@ using UnityEngine;
 public class PlayerMovement : MonoBehaviour
 {
     [SerializeField] private float _speed = 5.0f;
-    public bool useCameraRelativeMovement = false;
     private PowerUpSystem _powerUpSystem;
     private Rigidbody _playerRb;
     private GameObject _focalPoint;
@@ -107,18 +106,15 @@ public class PlayerMovement : MonoBehaviour
         if (_focalPoint != null && _rotateCamera != null)
         {
             Vector3 movementDirection = Vector3.zero;
-            if (useCameraRelativeMovement)
+            if (GameSettings.Instance != null && GameSettings.Instance.UseCameraRelativeMovement)
             {
                 //Camera-Relative Movement
-                _rotateCamera.cameraRotationEnabled = true;
                 movementDirection += _focalPoint.transform.forward * forwardInput;
                 _playerRb.AddForce(movementDirection * _speed);
             }
             else
             {
                 //Direct Input Movement (Camera-Relative Direction)
-                _rotateCamera.cameraRotationEnabled = false;
-
                 Transform cameraTransform = Camera.main.transform;
                 Vector3 cameraForward = cameraTransform.forward;
                 Vector3 cameraRight = cameraTransform.right;
