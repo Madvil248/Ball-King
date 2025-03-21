@@ -108,7 +108,7 @@ public class PlayerController : MonoBehaviour
 
         if (!string.IsNullOrEmpty(collectedAbilityName))
         {
-            _audioSource.PlayOneShot(_powerUpSound, 0.75f);
+            SoundOnPowerPickUp();
 
             if (_powerUpSystem != null)
             {
@@ -286,5 +286,17 @@ public class PlayerController : MonoBehaviour
     public string[] GetAvailableAbilities()
     {
         return _availableAbilities;
+    }
+
+    void SoundOnPowerPickUp()
+    {
+        if (_powerUpSound != null && GameSettings.Instance != null && GameSettings.Instance.IsSoundEnabled)
+        {
+            if (_audioSource == null)
+            {
+                _audioSource = gameObject.AddComponent<AudioSource>();
+            }
+            _audioSource.PlayOneShot(_powerUpSound, 0.75f);
+        }
     }
 }

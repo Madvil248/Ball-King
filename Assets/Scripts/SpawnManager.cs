@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -5,9 +6,11 @@ using UnityEngine.SceneManagement;
 public class SpawnManager : MonoBehaviour
 {
     [SerializeField] private int _waveNumber = 1;
+    [SerializeField] private int _maxEnemiesToSpawn = 5;
 
     [Header("Enemies")]
-    [SerializeField] private float _spawnRange = 9.0f;
+    [SerializeField] private float _spawnMinRange = 9.0f;
+    [SerializeField] private float _spawnMaxRange = 11.0f;
     [SerializeField] private GameObject _easyEnemyPrefab;
     [SerializeField] private GameObject _normalEnemyPrefab;
     [SerializeField] private GameObject _hardEnemyPrefab;
@@ -25,6 +28,7 @@ public class SpawnManager : MonoBehaviour
 
     private int _score = 0;
     private GameHUDController _gameHUDController;
+    private Queue<GameObject> _pendingEnemies = new Queue<GameObject>();
 
     public int WaveNumber
     {
@@ -76,7 +80,12 @@ public class SpawnManager : MonoBehaviour
     void Update()
     {
         _enemyCount = FindObjectsByType<EnemyBase>(FindObjectsSortMode.None).Length;
-        if (_enemyCount == 0)
+        while (_enemyCount < _maxEnemiesToSpawn && _pendingEnemies.Count > 0)
+        {
+            SpawnEnemy(_pendingEnemies.Dequeue(), 0f);
+            _enemyCount++;
+        }
+        if (_enemyCount == 0 && _pendingEnemies.Count == 0)
         {
             _waveNumber++;
             StartNewWave();
@@ -85,6 +94,8 @@ public class SpawnManager : MonoBehaviour
 
     void StartNewWave()
     {
+        _pendingEnemies.Clear();
+
         SpawnWave(_waveNumber);
         if (_waveNumber == 1)
         {
@@ -118,35 +129,37 @@ public class SpawnManager : MonoBehaviour
         Debug.Log($">>> Wave {waveNumber}");
         bool spawnBoss = (waveNumber % 10 == 0);
 
-        //Easy enemies
+        //calculate enemies
         int easyCount = (waveNumber - 1) % 4 + 1;
-
-        //Normal enemies
         int normalCount = (waveNumber >= 5) ? (waveNumber - 5) / 4 + 1 : 0;
-
-        //Hard enemies
         int hardCount = (waveNumber >= 21) ? ((waveNumber - 21) / 16) + 1 : 0;
+
+        List<GameObject> enemiesToSpawn = new List<GameObject>();
+        int initialSpawnCount = _maxEnemiesToSpawn;
+
+        for (int i = 0; i < easyCount; i++) enemiesToSpawn.Add(_easyEnemyPrefab);
+        for (int i = 0; i < normalCount; i++) enemiesToSpawn.Add(_normalEnemyPrefab);
+        for (int i = 0; i < hardCount; i++) enemiesToSpawn.Add(_hardEnemyPrefab);
 
         if (spawnBoss)
         {
             Debug.Log("BOSS APPEARS!");
             SpawnEnemy(_bossEnemyPrefab, _bossSpawnYOffset);
+            _enemyCount += 3;
+            initialSpawnCount = _maxEnemiesToSpawn - 3;
         }
 
-        //Spawn calculated number of each enemy type
-        SpawnEnemies(easyCount, _easyEnemyPrefab, "Easy");
-        SpawnEnemies(normalCount, _normalEnemyPrefab, "Normal");
-        SpawnEnemies(hardCount, _hardEnemyPrefab, "Hard");
-    }
-
-    private void SpawnEnemies(int count, GameObject prefabToSpawn, string enemyTypeName)
-    {
-        for (int i = 0; i < count; i++)
+        for (int i = 0; i < Mathf.Min(initialSpawnCount, enemiesToSpawn.Count); i++)
         {
-            SpawnEnemy(prefabToSpawn, 0f);
+            SpawnEnemy(enemiesToSpawn[i], 0f);
+            _enemyCount++;
+        }
+
+        for (int i = initialSpawnCount; i < enemiesToSpawn.Count; i++)
+        {
+            _pendingEnemies.Enqueue(enemiesToSpawn[i]);
         }
     }
-
 
     private void SpawnEnemy(GameObject prefabToSpawn, float yOffset)
     {
@@ -175,8 +188,17 @@ public class SpawnManager : MonoBehaviour
 
     private Vector3 GenerateSpawnPosition(float yOffset)
     {
-        float spawnPosX = Random.Range(-_spawnRange, _spawnRange);
-        float spawnPosZ = Random.Range(-_spawnRange, _spawnRange);
+        float spawnPosX = Random.Range(-_spawnMaxRange, _spawnMaxRange);
+        float spawnPosZ;
+        if (Mathf.Abs(spawnPosX) > _spawnMinRange)
+        {
+            spawnPosZ = Random.Range(-_spawnMinRange, _spawnMinRange);
+        }
+        else
+        {
+            spawnPosZ = Random.Range(-_spawnMaxRange, _spawnMaxRange);
+        }
+
         return new Vector3(spawnPosX, yOffset, spawnPosZ);
     }
 

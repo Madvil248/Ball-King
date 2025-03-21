@@ -14,14 +14,38 @@ public class EnemyMovement : MonoBehaviour
         {
             Debug.LogError("Player GameObject not found! Make sure your Player GameObject is tagged 'Player'.");
         }
+
+        _enemyBase = GetComponent<EnemyBase>();
+        if (_enemyBase == null)
+        {
+            Debug.LogError("EnemyBase component not found on this enemy!");
+        }
     }
 
     public void MoveTowardsPlayer()
     {
-        if (_player != null)
+        if (_player != null && _enemyBase != null)
         {
             Vector3 lookDirection = (_player.transform.position - transform.position).normalized;
-            _enemyRb.AddForce(lookDirection * _enemyBase.Speed);
+            float currentSpeed = _enemyBase.Speed;
+
+            if (GameSettings.Instance != null)
+            {
+                switch (GameSettings.Instance.CurrentDifficulty)
+                {
+                    case GameSettings.Difficulty.Easy:
+                        currentSpeed += 1f;
+                        break;
+                    case GameSettings.Difficulty.Normal:
+                        currentSpeed += 5f;
+                        break;
+                    case GameSettings.Difficulty.Hard:
+                        currentSpeed += 10f;
+                        break;
+                }
+            }
+
+            _enemyRb.AddForce(lookDirection * currentSpeed);
         }
     }
 }

@@ -26,12 +26,15 @@ public class OptionsView : MonoBehaviour
                 {
                     _difficultyDropdown.options.Add(new TMP_Dropdown.OptionData(enumValue.ToString()));
                 }
+                Debug.Log($"CurrentDifficulty - {GameSettings.Instance.CurrentDifficulty}");
                 _difficultyDropdown.value = (int)GameSettings.Instance.CurrentDifficulty;
+                _difficultyDropdown.RefreshShownValue();
                 _currentSelectedDifficulty = GameSettings.Instance.CurrentDifficulty;
             }
 
             if (_soundToggle != null)
             {
+                Debug.Log($"IsSoundEnabled - {GameSettings.Instance.IsSoundEnabled}");
                 _soundToggle.isOn = GameSettings.Instance.IsSoundEnabled;
             }
 
@@ -55,14 +58,19 @@ public class OptionsView : MonoBehaviour
     {
         if (GameSettings.Instance != null)
         {
+            Debug.Log($"OnDifficultyChange index - {index}");
             _currentSelectedDifficulty = (GameSettings.Difficulty)index;
+            Debug.Log($"_currentSelectedDifficulty - {_currentSelectedDifficulty}");
+            GameSettings.Instance.SetDifficulty(_currentSelectedDifficulty);
         }
     }
 
     public void OnSoundToggle(bool isOn)
     {
+
         if (GameSettings.Instance != null)
         {
+            Debug.Log($"OnSoundToggle | isOn - {isOn}");
             GameSettings.Instance.SetSoundEnabled(isOn);
         }
     }

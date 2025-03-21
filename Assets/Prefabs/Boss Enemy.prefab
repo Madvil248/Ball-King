@@ -101,7 +101,7 @@ Rigidbody:
   serializedVersion: 4
   m_Mass: 10
   m_Drag: 0
-  m_AngularDrag: 0.09
+  m_AngularDrag: 0.1
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -163,8 +163,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8f588a458f77d5444bac90fa07376470, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _speed: 5
-  _pushResistance: 1
+  _speed: 20
+  _pushResistance: 10
   _scoreValue: 10
   _collisionSound: {fileID: 8300000, guid: adc756c489d9ecc4b8d7a35fb69ff468, type: 3}
 --- !u!82 &6178546929187079547

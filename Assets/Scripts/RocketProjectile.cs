@@ -37,7 +37,10 @@ public class RocketProjectile : MonoBehaviour
         {
             _audioSource = gameObject.AddComponent<AudioSource>();
         }
-        _audioSource.PlayOneShot(_rocketFireSoundEffect, 0.75f);
+        if (GameSettings.Instance != null && GameSettings.Instance.IsSoundEnabled)
+        {
+            _audioSource.PlayOneShot(_rocketFireSoundEffect, 0.75f);
+        }
     }
 
     void FixedUpdate()
@@ -76,7 +79,10 @@ public class RocketProjectile : MonoBehaviour
         {
             Instantiate(_explosionEffectPrefab, transform.position, Quaternion.identity);
         }
-        PlayExplosionSound(collision.transform.position);
+        if (GameSettings.Instance != null && GameSettings.Instance.IsSoundEnabled)
+        {
+            PlayExplosionSound(collision.transform.position);
+        }
         Explode();
         Destroy(gameObject);
     }
@@ -96,10 +102,8 @@ public class RocketProjectile : MonoBehaviour
 
     void PlayExplosionSound(Vector3 vectorPos)
     {
-        Debug.Log("PlayExplosionSound()");
         if (_explosionSoundEffect != null && vectorPos != null && _cameraPosition != null)
         {
-            Debug.Log("Now should be sound!");
             AudioSource.PlayClipAtPoint(_explosionSoundEffect, _cameraPosition - vectorPos);
         }
     }

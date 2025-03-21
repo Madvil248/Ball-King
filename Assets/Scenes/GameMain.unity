@@ -291,7 +291,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _waveNumber: 1
-  _spawnRange: 9
+  _spawnMinRange: 8
+  _spawnMaxRange: 11
   _easyEnemyPrefab: {fileID: 1794726106868514033, guid: baea7819a2f7fa8488da617bcc69411b, type: 3}
   _normalEnemyPrefab: {fileID: 6107346302887545965, guid: 66e9a5c8afc4e594bb56f9e9889ec5e2, type: 3}
   _hardEnemyPrefab: {fileID: 462775003405115409, guid: a3f96ec7619690749b21ddb9aa961438, type: 3}
@@ -907,7 +908,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rotationSpeed: 80
-  cameraRotationEnabled: 0
 --- !u!4 &802425100
 Transform:
   m_ObjectHideFlags: 0
@@ -1635,7 +1635,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -130, y: 5}
+  m_AnchoredPosition: {x: -140, y: 5}
   m_SizeDelta: {x: 45, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1506639491
@@ -1685,8 +1685,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 20
-  m_fontSizeBase: 20
+  m_fontSize: 24
+  m_fontSizeBase: 24
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -1907,7 +1907,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 130, y: 5}
+  m_AnchoredPosition: {x: 140, y: 5}
   m_SizeDelta: {x: 45, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1644251472
@@ -1957,8 +1957,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 20
-  m_fontSizeBase: 20
+  m_fontSize: 24
+  m_fontSizeBase: 24
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18

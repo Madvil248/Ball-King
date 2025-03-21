@@ -79,7 +79,15 @@ public class EnemyBase : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        if ((collision.gameObject.CompareTag("Player") || collision.gameObject.CompareTag("Enemy")) && _collisionSound != null)
+        if ((collision.gameObject.CompareTag("Player") || collision.gameObject.CompareTag("Enemy")))
+        {
+            PlaySoundOnCollission();
+        }
+    }
+
+    void PlaySoundOnCollission()
+    {
+        if(_collisionSound != null && GameSettings.Instance != null && GameSettings.Instance.IsSoundEnabled) 
         {
             if (_audioSource == null)
             {

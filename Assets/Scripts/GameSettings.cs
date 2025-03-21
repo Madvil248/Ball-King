@@ -22,11 +22,13 @@ public class GameSettings : MonoBehaviour
             Instance = this;
             DontDestroyOnLoad(gameObject);
             LoadSettings();
+            Debug.Log("GameSettings initialized and set to DontDestroyOnLoad.");
         }
     }
 
     public void SetDifficulty(Difficulty difficulty)
     {
+        Debug.Log($"SetDifficulty: {difficulty}");
         CurrentDifficulty = difficulty;
         PlayerPrefs.SetInt(DifficultyKey, (int)difficulty);
         PlayerPrefs.Save();
@@ -62,7 +64,7 @@ public class GameSettings : MonoBehaviour
         CurrentDifficulty = (Difficulty)PlayerPrefs.GetInt(DifficultyKey, 1);
         IsSoundEnabled = PlayerPrefs.GetInt(SoundKey, 1) == 1;
         IsMusicEnabled = PlayerPrefs.GetInt(MusicKey, 1) == 1;
-        UseCameraRelativeMovement = PlayerPrefs.GetInt(CameraRelativeKey, 1) == 0;
+        UseCameraRelativeMovement = PlayerPrefs.GetInt(CameraRelativeKey, 1) == 1;
 
         Debug.Log($"Loaded Settings - Difficulty: {CurrentDifficulty}, Sound: {IsSoundEnabled}, Music: {IsMusicEnabled}, Camera Relative: {UseCameraRelativeMovement}");
     }

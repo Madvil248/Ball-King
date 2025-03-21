@@ -120,16 +120,27 @@ public class GameOverUIController : MonoBehaviour
 
     void PlayBackgroundMusic()
     {
-        _audioSource.clip = _backgroundMusic;
-        _audioSource.time = _backgroundMusicStartTime;
-        _audioSource.loop = true;
-        _audioSource.Play();
+        if (_backgroundMusic != null && GameSettings.Instance != null && GameSettings.Instance.IsMusicEnabled)
+        {
+            if (_audioSource == null)
+            {
+                _audioSource = gameObject.AddComponent<AudioSource>();
+            }
+            _audioSource.clip = _backgroundMusic;
+            _audioSource.time = _backgroundMusicStartTime;
+            _audioSource.loop = true;
+            _audioSource.Play();
+        }
     }
 
     void PlaySoundButtonClick()
     {
-        if (_audioSource != null)
+        if (_buttonClick != null && GameSettings.Instance != null && GameSettings.Instance.IsSoundEnabled)
         {
+            if (_audioSource == null)
+            {
+                _audioSource = gameObject.GetComponent<AudioSource>();
+            }
             _audioSource.PlayOneShot(_buttonClick);
         }
     }

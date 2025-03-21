@@ -90,8 +90,12 @@ public class GameHUDController : MonoBehaviour
 
     void PlayBackgroundMusic()
     {
-        if (_audioSource != null)
+        if (_gameBackgroundMusic != null && GameSettings.Instance != null && GameSettings.Instance.IsMusicEnabled)
         {
+            if (_audioSource == null)
+            {
+                _audioSource = gameObject.AddComponent<AudioSource>();
+            }
             _audioSource.clip = _gameBackgroundMusic;
             _audioSource.loop = true;
             _audioSource.Play();

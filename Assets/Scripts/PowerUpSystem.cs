@@ -224,7 +224,10 @@ public class PowerUpSystem : MonoBehaviour
         {
             Vector3 awayFromPlayer = enemyRb.transform.position - playerPosition;
             enemyRb.AddForce(awayFromPlayer * PowerBoostStrength, ForceMode.Impulse);
-            PlayOneShotSound(_powerBoostAudioEffect);
+            if (_powerBoostAudioEffect != null)
+            {
+                PlayOneShotSound(_powerBoostAudioEffect);
+            }
         }
     }
 
@@ -337,7 +340,10 @@ public class PowerUpSystem : MonoBehaviour
 
     public void PlayPowerJumpAudioEffect()
     {
-        PlayOneShotSound(_powerJumpAudioEffect);
+        if (_powerJumpAudioEffect != null)
+        {
+            PlayOneShotSound(_powerJumpAudioEffect);
+        }
     }
 
     public void UpdatePowerJumpIndicatorPosition(Vector3 playerPosition)
@@ -432,8 +438,12 @@ public class PowerUpSystem : MonoBehaviour
 
     void PlayOneShotSound(AudioClip clip)
     {
-        if (_audioSource != null)
+        if (GameSettings.Instance != null && GameSettings.Instance.IsSoundEnabled)
         {
+            if (_audioSource == null)
+            {
+                _audioSource = gameObject.AddComponent<AudioSource>();
+            }
             _audioSource.PlayOneShot(clip, 0.75f);
         }
     }
