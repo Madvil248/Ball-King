@@ -291,7 +291,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _waveNumber: 1
-  _spawnMinRange: 8
+  _maxEnemiesToSpawn: 5
+  _spawnMinRange: 7
   _spawnMaxRange: 11
   _easyEnemyPrefab: {fileID: 1794726106868514033, guid: baea7819a2f7fa8488da617bcc69411b, type: 3}
   _normalEnemyPrefab: {fileID: 6107346302887545965, guid: 66e9a5c8afc4e594bb56f9e9889ec5e2, type: 3}
@@ -2667,6 +2668,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 117981044153593913, guid: 8c98baf31c223674b9133080f6807a3c, type: 3}
+      propertyPath: _speed
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 1598987143921297289, guid: 8c98baf31c223674b9133080f6807a3c, type: 3}
+      propertyPath: m_AngularDrag
+      value: 0.05
+      objectReference: {fileID: 0}
     - target: {fileID: 1651315286743555838, guid: 8c98baf31c223674b9133080f6807a3c, type: 3}
       propertyPath: m_Name
       value: PlayerBall
@@ -2732,9 +2741,9 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 5831814716121893815, guid: 363a8f737719f4d2eafb35f885f3706f, type: 3}
-      propertyPath: m_RootOrder
-      value: 3
+    - target: {fileID: 1425117010632325259, guid: 363a8f737719f4d2eafb35f885f3706f, type: 3}
+      propertyPath: rotationSpeed
+      value: 2.5
       objectReference: {fileID: 0}
     - target: {fileID: 5831814716121893815, guid: 363a8f737719f4d2eafb35f885f3706f, type: 3}
       propertyPath: m_LocalPosition.x

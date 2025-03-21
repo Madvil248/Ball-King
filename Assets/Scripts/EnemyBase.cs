@@ -49,7 +49,7 @@ public class EnemyBase : MonoBehaviour
 
     public virtual void MoveTowardsPlayer()
     {
-        if (_player != null)
+        if (_player != null && transform.position.y < 5f)
         {
             Vector3 lookDirection = (_player.transform.position - transform.position).normalized;
             _enemyRb.AddForce(lookDirection * _speed);
@@ -87,7 +87,7 @@ public class EnemyBase : MonoBehaviour
 
     void PlaySoundOnCollission()
     {
-        if(_collisionSound != null && GameSettings.Instance != null && GameSettings.Instance.IsSoundEnabled) 
+        if (_collisionSound != null && GameSettings.Instance != null && GameSettings.Instance.IsSoundEnabled)
         {
             if (_audioSource == null)
             {

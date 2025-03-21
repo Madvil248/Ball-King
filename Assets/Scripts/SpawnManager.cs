@@ -9,7 +9,7 @@ public class SpawnManager : MonoBehaviour
     [SerializeField] private int _maxEnemiesToSpawn = 5;
 
     [Header("Enemies")]
-    [SerializeField] private float _spawnMinRange = 9.0f;
+    [SerializeField] private float _spawnMinRange = 7.0f;
     [SerializeField] private float _spawnMaxRange = 11.0f;
     [SerializeField] private GameObject _easyEnemyPrefab;
     [SerializeField] private GameObject _normalEnemyPrefab;
@@ -82,7 +82,7 @@ public class SpawnManager : MonoBehaviour
         _enemyCount = FindObjectsByType<EnemyBase>(FindObjectsSortMode.None).Length;
         while (_enemyCount < _maxEnemiesToSpawn && _pendingEnemies.Count > 0)
         {
-            SpawnEnemy(_pendingEnemies.Dequeue(), 0f);
+            SpawnEnemy(_pendingEnemies.Dequeue(), 20f);
             _enemyCount++;
         }
         if (_enemyCount == 0 && _pendingEnemies.Count == 0)
@@ -151,7 +151,7 @@ public class SpawnManager : MonoBehaviour
 
         for (int i = 0; i < Mathf.Min(initialSpawnCount, enemiesToSpawn.Count); i++)
         {
-            SpawnEnemy(enemiesToSpawn[i], 0f);
+            SpawnEnemy(enemiesToSpawn[i], 20f);
             _enemyCount++;
         }
 
@@ -177,7 +177,6 @@ public class SpawnManager : MonoBehaviour
         {
             Vector3 spawnPos = GenerateSpawnPosition(0f);
             int powerUpIndex = Random.Range(0, powerUpPrefabs.Length);
-            //int powerUpIndex = 1;
             Instantiate(powerUpPrefabs[powerUpIndex], spawnPos, Quaternion.identity);
         }
         else
