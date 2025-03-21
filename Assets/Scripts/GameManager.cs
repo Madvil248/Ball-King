@@ -94,7 +94,6 @@ public class GameManager : MonoBehaviour
         string json = JsonUtility.ToJson(wrapper);
         PlayerPrefs.SetString(HighScoreKey, json);
         PlayerPrefs.Save();
-        Debug.Log("High Scores Saved to PlayerPrefs");
     }
 
     public void LoadHighScores()

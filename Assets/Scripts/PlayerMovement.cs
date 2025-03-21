@@ -6,7 +6,6 @@ public class PlayerMovement : MonoBehaviour
     private PowerUpSystem _powerUpSystem;
     private Rigidbody _playerRb;
     private GameObject _focalPoint;
-    private RotateCamera _rotateCamera;
 
     [Header("Jump Settings")]
     [SerializeField] private float _jumpForce = 25.0f;
@@ -34,12 +33,6 @@ public class PlayerMovement : MonoBehaviour
         if (_focalPoint == null)
         {
             Debug.LogError("Focal Point not found! Make sure your Focal Point GameObject is tagged 'FocalPoint'.");
-        }
-
-        _rotateCamera = _focalPoint.GetComponent<RotateCamera>();
-        if (_rotateCamera == null)
-        {
-            Debug.LogError("RotateCamera component not found on Main Camera!");
         }
 
         _powerUpSystem = GetComponent<PowerUpSystem>();
@@ -87,23 +80,14 @@ public class PlayerMovement : MonoBehaviour
     private void CheckGround()
     {
         RaycastHit hit;
-        if (Physics.Raycast(transform.position, Vector3.down, out hit, _groundCheckDistance))
-        {
-            if (!hit.collider.isTrigger)
-            {
-                _isGrounded = true;
-            }
-        }
-        else
-        {
-            _isGrounded = false;
-        }
+        bool raycastHit = Physics.Raycast(transform.position, Vector3.down, out hit, _groundCheckDistance);
+        _isGrounded = raycastHit && !hit.collider.isTrigger;
     }
 
     public void Move(float forwardInput, float horizontalInput)
     {
 
-        if (_focalPoint != null && _rotateCamera != null)
+        if (_focalPoint != null)
         {
             Vector3 movementDirection = Vector3.zero;
             if (GameSettings.Instance != null && GameSettings.Instance.UseCameraRelativeMovement)
